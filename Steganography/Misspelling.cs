@@ -36,6 +36,8 @@ namespace Steganography
         public Misspelling()
         {
             InitializeComponent();
+            Load += (s, ev) =>
+                Text = IsEmbedMode ? "Misspelling — เลือกคู่คำสำหรับฝัง" : "Misspelling — เลือกคู่คำสำหรับถอด";
         }
 
         private void checkedListBox1_SelectedIndexChanged(object sender, EventArgs e)

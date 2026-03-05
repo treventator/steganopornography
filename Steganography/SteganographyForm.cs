@@ -43,6 +43,19 @@ namespace Steganography
                     LoadFileIntoTextBox(files[0], InputPlaintext, namefile);
             };
 
+            // Drag & Drop — InputCovertext (Encryption tab)
+            InputCovertext.AllowDrop = true;
+            InputCovertext.DragEnter += (s, ev) =>
+                ev.Effect = ev.Data.GetDataPresent(DataFormats.FileDrop)
+                    ? DragDropEffects.Copy
+                    : DragDropEffects.None;
+            InputCovertext.DragDrop += (s, ev) =>
+            {
+                var files = (string[])ev.Data.GetData(DataFormats.FileDrop);
+                if (files != null && files.Length > 0)
+                    LoadFileIntoTextBox(files[0], InputCovertext, null);
+            };
+
             // Drag & Drop — InputChipertext (Decryption tab)
             InputChipertext.AllowDrop = true;
             InputChipertext.DragEnter += (s, ev) =>
@@ -383,8 +396,11 @@ namespace Steganography
                 bool[] bits    = SteganographyEngine.StringToPayloadBits(cipherText);
                 int needed     = bits.Length;
                 int zwspSlots  = Math.Max(0, coverText.Length - 1);
-                tsslLabel.Text = $"ต้องการ {needed} bits  |  ZWSP รองรับ {zwspSlots} bits" +
-                                 (zwspSlots >= needed ? "  ✓" : "  ✗ (Covertext สั้นเกินไปสำหรับ ZWSP)");
+                int nbspSlots  = 0;
+                foreach (char c in coverText)
+                    if (c == ' ' || c == '\u00A0') nbspSlots++;
+                tsslLabel.Text = $"ต้องการ {needed} bits  |  ZWSP: {zwspSlots}  NBSP: {nbspSlots}" +
+                                 (zwspSlots >= needed ? "  ✓" : "  ✗ (Covertext สั้นเกินไป)");
             }
             catch { }
         }
@@ -682,7 +698,7 @@ namespace Steganography
                 "• .pdf / .doc / .docx — อ่านได้เฉพาะ plain text เท่านั้น\n\n" +
                 "Steganotext ที่บันทึกจะเป็น .txt (UTF-8)\n" +
                 "ห้ามเปิดไฟล์ด้วย editor ที่ strip invisible characters\n" +
-                "เพราะจะลบ ZWSP ออก (สำหรับเทคนิค Space)",
+                "เพราะจะลบ ZWSP (U+200B) หรือ normalize NBSP (U+00A0) เป็น space ปกติ",
                 "รูปแบบไฟล์",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information
@@ -695,10 +711,14 @@ namespace Steganography
                 "คำเตือนด้านความปลอดภัย\n\n" +
                 "โปรแกรมนี้จัดทำขึ้นเพื่อการศึกษาเท่านั้น\n" +
                 "ไม่ควรใช้กับข้อมูลลับหรือข้อมูลสำคัญจริง\n\n" +
-                "ข้อจำกัดที่ควรทราบ:\n" +
-                "• AES Salt คงที่ (ลด security เล็กน้อย)\n" +
+                "คุณสมบัติ:\n" +
+                "• AES-256-CBC + Salt สุ่มใหม่ทุกครั้ง\n" +
+                "• HMAC-SHA256 ป้องกันการดัดแปลง\n" +
+                "• CRC-16 ตรวจสอบ payload integrity\n\n" +
+                "ข้อจำกัด:\n" +
                 "• Homoglyph/Misspelling ตรวจจับได้ด้วยสายตา\n" +
-                "• ZWSP ตรวจจับได้ด้วย text analyzer\n\n" +
+                "• ZWSP/NBSP ตรวจจับได้ด้วย text analyzer\n" +
+                "• PBKDF2 ควรใช้ 100,000+ รอบสำหรับงานจริง\n\n" +
                 "ผู้พัฒนาไม่รับผิดชอบต่อความเสียหายใดๆ",
                 "Security Warning",
                 MessageBoxButtons.OK,

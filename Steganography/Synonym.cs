@@ -36,6 +36,8 @@ namespace Steganography
         public Synonym()
         {
             InitializeComponent();
+            Load += (s, ev) =>
+                Text = IsEmbedMode ? "Synonym — เลือกกลุ่มคำสำหรับฝัง" : "Synonym — เลือกกลุ่มคำสำหรับถอด";
         }
 
         private void BtnOK_Click(object sender, EventArgs e)

@@ -225,8 +225,25 @@ namespace Steganography
 
         private const char ZWSP = '\u200B';
 
+        /// <summary>
+        /// Normalize covertext ก่อน embed: ลบ ZWSP และแทน NBSP ด้วย space ปกติ
+        /// ป้องกันปัญหา pre-existing invisible chars ที่จะทำให้ extract ผิดพลาด
+        /// </summary>
+        private static string NormalizeCovertext(string coverText)
+        {
+            var sb = new StringBuilder(coverText.Length);
+            foreach (char c in coverText)
+            {
+                if (c == ZWSP) continue;        // strip ZWSP
+                if (c == NBSP) { sb.Append(' '); continue; } // NBSP → space
+                sb.Append(c);
+            }
+            return sb.ToString();
+        }
+
         public static string ZWSPEmbed(string coverText, string cipherText)
         {
+            coverText = NormalizeCovertext(coverText);
             bool[] bits = StringToPayloadBits(cipherText);
 
             int slots = coverText.Length - 1;
@@ -283,6 +300,7 @@ namespace Steganography
 
         public static string NBSPEmbed(string coverText, string cipherText)
         {
+            coverText = NormalizeCovertext(coverText);
             bool[] bits = StringToPayloadBits(cipherText);
 
             // นับจำนวน space ปกติใน covertext
