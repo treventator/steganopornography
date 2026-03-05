@@ -4,7 +4,7 @@
 
 ### 1.1 Core Value - One Sentence
 
-> Plaintext secret message is encrypted (AES-256), then hidden inside normal-looking Thai text using 4 steganography techniques. The receiver extracts and decrypts it back.
+> Plaintext secret message is encrypted (AES-256), then hidden inside normal-looking Thai text using 5 steganography techniques. The receiver extracts and decrypts it back.
 
 ```
 Cryptography alone:  Attacker knows a secret exists, but can't read it
@@ -24,7 +24,7 @@ This is an **educational project** that teaches:
 | PBKDF2 Key Derivation | Why we don't use passwords directly as keys |
 | HMAC-SHA256 | Why encrypt-then-MAC prevents tampering |
 | Bit Manipulation | How text becomes bits and bits become hidden data |
-| Text Steganography | 4 different ways to hide data in Thai text |
+| Text Steganography | 5 different ways to hide data in Thai text |
 | Security Auditing | How to find and fix vulnerabilities |
 
 **Unique contribution**: Text steganography research for Thai language is very rare. Most existing work focuses on image steganography or English text.
@@ -38,6 +38,7 @@ This is an **educational project** that teaches:
 | Visually similar characters (dochada/patuk) | Homoglyph |
 | Common misspellings that people accept as normal | Misspelling |
 | No spaces between words - invisible chars go unnoticed | ZWSP |
+| Spaces between sentences/words look identical with NBSP | NBSP |
 | Rich synonyms in formal/government language | Synonym |
 
 ---
@@ -75,6 +76,7 @@ This is an **educational project** that teaches:
 | Technique | Human detectable? | Machine detectable? | Capacity | Best for |
 |---|---|---|---|---|
 | ZWSP | Not at all | Scan for U+200B | Highest (chars-1) | Any scenario |
+| NBSP | Not at all | Scan for U+00A0 | High (space count) | Text with many spaces |
 | Synonym | Almost impossible | Very hard | Low | Meeting reports |
 | Misspelling | Looks like typos | Dictionary check | Low | Legal documents |
 | Homoglyph | Difficult | Check codepoints | Medium | Formal text with target chars |
@@ -251,6 +253,7 @@ Thai readers think: "Just normal typos, people misspell these all the time"
 | RT-2 | "Hi" | "secret" | Homoglyph (pairs 0,1,2) | Decrypt returns "Hi" |
 | RT-3 | "Hi" | "secret" | Misspelling (pairs 0-9) | Decrypt returns "Hi" |
 | RT-4 | "Hi" | "secret" | Synonym (groups 0-9) | Decrypt returns "Hi" |
+| RT-4b | "Hi" | "secret" | NBSP | Decrypt returns "Hi" |
 | RT-5 | Thai text (33 bytes) | "pass" | ZWSP | Decrypt returns original |
 | RT-6 | Thai+English+numbers | "P@ss!" | ZWSP | Decrypt returns original |
 | RT-7 | Emoji password | "key" | ZWSP | Decrypt returns original |
@@ -280,6 +283,7 @@ Thai readers think: "Just normal typos, people misspell these all the time"
 | # | Test | Expected |
 |---|---|---|
 | CA-1 | ZWSP: covertext 100 chars, need 752 bits | Error: "covertext too short (need 753 chars)" |
+| CA-1b | NBSP: covertext with 100 spaces, need 752 bits | Error: "covertext มี space ไม่เพียงพอ" |
 | CA-2 | ZWSP: covertext 753 chars, need 752 bits | Success (just enough) |
 | CA-3 | Homoglyph: covertext has 5 target chars, need 752 | Error: "insufficient Homoglyph chars (need 752, got 5)" |
 | CA-4 | Misspelling: covertext has 3 target words, need 752 | Error: "insufficient Misspelling words" |
@@ -338,6 +342,7 @@ Formula:
 | Technique | Covertext needed for 752 bits | For 1,072 bits |
 |---|---|---|
 | ZWSP | 753 characters (~3 sentences) | 1,073 characters (~1 paragraph) |
+| NBSP | 752 spaces (~5-10 paragraphs) | 1,072 spaces (~10-15 paragraphs) |
 | Homoglyph (3 pairs) | ~5,000+ chars (depends on frequency) | ~7,000+ chars |
 | Misspelling | 752 target word occurrences (very long document) | 1,072 occurrences |
 | Synonym | 752 target word occurrences (very long document) | 1,072 occurrences |

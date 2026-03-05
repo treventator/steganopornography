@@ -15,7 +15,7 @@ You are creating a presentation slide deck (10-12 slides) about a **Thai Text St
 ## Slide 1: Title
 
 **Title**: Thai Text Steganography
-**Subtitle**: Hiding Secret Messages in Thai Text using AES-256 + 4 Steganography Techniques
+**Subtitle**: Hiding Secret Messages in Thai Text using AES-256 + 5 Steganography Techniques
 **Tagline**: "Text that looks normal... but carries a secret"
 
 **Visual**: Split image - left side shows normal Thai text, right side shows the same text with hidden bits highlighted/glowing
@@ -53,7 +53,7 @@ You are creating a presentation slide deck (10-12 slides) about a **Thai Text St
        |                            |                            |
        v                            v                            v
    AES-256-CBC               Choose technique              Extract bits
-       |                     (4 options)                        |
+       |                     (5 options)                        |
        v                            |                            v
    Ciphertext (Base64)              v                       Ciphertext
        |                      Steganotext                       |
@@ -68,9 +68,9 @@ You are creating a presentation slide deck (10-12 slides) about a **Thai Text St
 
 ## Slide 4: The 4 Techniques - Overview
 
-**Title**: 4 Ways to Hide Data in Thai Text
+**Title**: 5 Ways to Hide Data in Thai Text
 
-**Visual**: 4 cards/panels, each with icon + name + one-line description + visual example
+**Visual**: 5 cards/panels, each with icon + name + one-line description + visual example
 
 **Card 1 - Homoglyph**
 - Swap visually similar Thai characters
@@ -87,7 +87,12 @@ You are creating a presentation slide deck (10-12 slides) about a **Thai Text St
 - Example: text looks 100% identical, but invisible chars carry data
 - Capacity: HIGH (best)
 
-**Card 4 - Synonym**
+**Card 4 - Non-Breaking Space (NBSP)**
+- Replace normal space (U+0020) with NBSP (U+00A0)
+- Example: text looks identical, but spaces carry hidden data
+- Capacity: High (number of spaces in covertext)
+
+**Card 5 - Synonym**
 - Swap words with same meaning
 - Example: "stated" vs "said", "approved" vs "agreed"
 - Capacity: Low (but hardest to detect)
@@ -239,11 +244,12 @@ Layer 1 (core): Plaintext secret message
 | Technique | Covertext needed | Visual scale |
 |---|---|---|
 | ZWSP | ~3 sentences | [====] |
+| NBSP | ~5-10 paragraphs (depends on spaces) | [============] |
 | Homoglyph | ~2 pages | [========================] |
 | Misspelling | ~50+ pages | [==========================================...] |
 | Synonym | ~50+ pages | [==========================================...] |
 
-**Bottom line**: ZWSP is the most practical for any message length. Other techniques are best for very short secrets in very long documents.
+**Bottom line**: ZWSP is the most practical for any message length. NBSP is second-best. Other techniques are best for very short secrets in very long documents.
 
 ---
 
@@ -253,7 +259,7 @@ Layer 1 (core): Plaintext secret message
 
 **Visual**: Test matrix with pass/fail indicators
 
-**Roundtrip Tests (all 4 techniques):**
+**Roundtrip Tests (all 5 techniques):**
 - Encrypt -> Embed -> Extract -> Decrypt = original message (PASS)
 - Thai + English + numbers + symbols (PASS)
 - Any password length/language (PASS)
@@ -278,7 +284,7 @@ Layer 1 (core): Plaintext secret message
 **What this project demonstrates:**
 1. Thai text has unique properties ideal for steganography
 2. Combining cryptography + steganography provides defense-in-depth
-3. 4 techniques with different tradeoffs (capacity vs detectability)
+3. 5 techniques with different tradeoffs (capacity vs detectability)
 4. Security audit process: find vulnerabilities, fix them, verify
 
 **Potential applications:**
@@ -306,4 +312,5 @@ Layer 1 (core): Plaintext secret message
 - Keep each slide to 1 key idea maximum
 - Use icons: lock (encryption), eye-slash (steganography), shield (security), magnifying glass (audit)
 - Total: 12 slides, approximately 15-20 minute presentation
+- Note: Project now has 5 techniques (added NBSP since original slide brief)
 - Add slide numbers and project title in footer
