@@ -5,10 +5,10 @@ using System.Windows.Forms;
 namespace Steganography
 {
     /// <summary>
-    /// หน้าต่างเลือกคู่คำสะกดผิด-ถูก สำหรับเทคนิค Misspelling
+    /// หน้าต่างเลือกกลุ่มคำพ้องความหมาย สำหรับเทคนิค Synonym
     /// ใช้ทั้งฝั่ง Embed และ Extract
     /// </summary>
-    public partial class Misspelling : Form
+    public partial class Synonym : Form
     {
         // ============================================================
         //  Properties
@@ -33,19 +33,14 @@ namespace Steganography
         //  Constructor
         // ============================================================
 
-        public Misspelling()
+        public Synonym()
         {
             InitializeComponent();
         }
 
-        private void checkedListBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            // ใช้สำหรับ preview หรือ validation ในอนาคต
-        }
-
         private void BtnOK_Click(object sender, EventArgs e)
         {
-            ExecuteMisspelling();
+            ExecuteSynonym();
         }
 
         private void BtnCancel_Click(object sender, EventArgs e)
@@ -70,12 +65,12 @@ namespace Steganography
         //  Core
         // ============================================================
 
-        public void ExecuteMisspelling()
+        public void ExecuteSynonym()
         {
-            var activePairs = GetActivePairIndices();
-            if (activePairs.Count == 0)
+            var activeGroups = GetActiveGroupIndices();
+            if (activeGroups.Count == 0)
             {
-                MessageBox.Show("กรุณาเลือกคู่คำอย่างน้อย 1 คู่",
+                MessageBox.Show("กรุณาเลือกกลุ่มคำพ้องอย่างน้อย 1 กลุ่ม",
                     "แจ้งเตือน", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -83,9 +78,9 @@ namespace Steganography
             try
             {
                 if (IsEmbedMode)
-                    ResultText = SteganographyEngine.MisspellingEmbed(CoverText, CipherText, activePairs);
+                    ResultText = SteganographyEngine.SynonymEmbed(CoverText, CipherText, activeGroups);
                 else
-                    ResultText = SteganographyEngine.MisspellingExtract(SteganotextInput, activePairs);
+                    ResultText = SteganographyEngine.SynonymExtract(SteganotextInput, activeGroups);
 
                 DialogResult = DialogResult.OK;
                 Close();
@@ -96,8 +91,8 @@ namespace Steganography
             }
         }
 
-        /// <summary>คืนรายการ index ของคู่คำที่ผู้ใช้ติ๊กเลือก</summary>
-        public List<int> GetActivePairIndices()
+        /// <summary>คืนรายการ index ของกลุ่มคำที่ผู้ใช้ติ๊กเลือก</summary>
+        public List<int> GetActiveGroupIndices()
         {
             var list = new List<int>();
             for (int i = 0; i < checkedListBox1.Items.Count; i++)

@@ -1,4 +1,4 @@
-﻿namespace Steganography
+namespace Steganography
 {
     partial class SteganographyForm
     {
@@ -13,9 +13,10 @@
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing)
             {
-                components.Dispose();
+                tt?.Dispose();
+                components?.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -52,6 +53,7 @@
             this.Encrytion = new System.Windows.Forms.Label();
             this.TabSteganography = new System.Windows.Forms.TabPage();
             this.BtS = new System.Windows.Forms.Button();
+            this.CopyStegano = new System.Windows.Forms.Button();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.BtSnn = new System.Windows.Forms.Button();
             this.BtSp = new System.Windows.Forms.Button();
@@ -76,6 +78,7 @@
             this.DecrytionBotton10 = new System.Windows.Forms.Button();
             this.CopyButton3 = new System.Windows.Forms.Button();
             this.BtRs6 = new System.Windows.Forms.Button();
+            this.BtSavePlain = new System.Windows.Forms.Button();
             this.PlaintextDecry = new System.Windows.Forms.Label();
             this.InputkeyDecry = new System.Windows.Forms.TextBox();
             this.KeyDecry = new System.Windows.Forms.Label();
@@ -110,6 +113,7 @@
             this.TabControl1.SelectedIndex = 0;
             this.TabControl1.Size = new System.Drawing.Size(806, 696);
             this.TabControl1.TabIndex = 6;
+            this.TabControl1.SelectedIndexChanged += new System.EventHandler(this.TabControl1_SelectedIndexChanged);
             // 
             // TabEncrytion
             // 
@@ -137,9 +141,8 @@
             this.TabEncrytion.Padding = new System.Windows.Forms.Padding(3);
             this.TabEncrytion.Size = new System.Drawing.Size(798, 663);
             this.TabEncrytion.TabIndex = 0;
-            this.TabEncrytion.Text = "Encrytion";
+            this.TabEncrytion.Text = "Encryption";
             this.TabEncrytion.UseVisualStyleBackColor = true;
-            this.TabEncrytion.Click += new System.EventHandler(this.TabEncrytion_Click);
             // 
             // LbFn
             // 
@@ -162,7 +165,6 @@
             this.namefile.Name = "namefile";
             this.namefile.Size = new System.Drawing.Size(178, 28);
             this.namefile.TabIndex = 26;
-            this.namefile.TextChanged += new System.EventHandler(this.namefile_TextChanged);
             // 
             // openbrowser
             // 
@@ -199,6 +201,7 @@
             this.InputCovertext.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.InputCovertext.Size = new System.Drawing.Size(677, 90);
             this.InputCovertext.TabIndex = 22;
+            this.InputCovertext.TextChanged += new System.EventHandler(this.InputCovertext_TextChanged);
             // 
             // InputPayload
             // 
@@ -249,7 +252,7 @@
             this.EncrytionButton1.Name = "EncrytionButton1";
             this.EncrytionButton1.Size = new System.Drawing.Size(103, 35);
             this.EncrytionButton1.TabIndex = 17;
-            this.EncrytionButton1.Text = "Encrytion";
+            this.EncrytionButton1.Text = "Encryption";
             this.EncrytionButton1.UseVisualStyleBackColor = false;
             this.EncrytionButton1.Click += new System.EventHandler(this.EncrytionButton1_Click);
             // 
@@ -257,18 +260,19 @@
             // 
             this.CopyButton2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.CopyButton2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(192)))));
-            this.CopyButton2.Location = new System.Drawing.Point(573, 671);
+            this.CopyButton2.Location = new System.Drawing.Point(573, 625);
             this.CopyButton2.Name = "CopyButton2";
             this.CopyButton2.Size = new System.Drawing.Size(80, 35);
             this.CopyButton2.TabIndex = 16;
             this.CopyButton2.Text = "Copy";
             this.CopyButton2.UseVisualStyleBackColor = false;
+            this.CopyButton2.Click += new System.EventHandler(this.CopyButton2_Click);
             // 
             // ResetBotton3
             // 
             this.ResetBotton3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
             this.ResetBotton3.ForeColor = System.Drawing.Color.SaddleBrown;
-            this.ResetBotton3.Location = new System.Drawing.Point(658, 671);
+            this.ResetBotton3.Location = new System.Drawing.Point(658, 625);
             this.ResetBotton3.Name = "ResetBotton3";
             this.ResetBotton3.Size = new System.Drawing.Size(80, 35);
             this.ResetBotton3.TabIndex = 15;
@@ -294,7 +298,6 @@
             this.InputKey.Name = "InputKey";
             this.InputKey.Size = new System.Drawing.Size(256, 28);
             this.InputKey.TabIndex = 8;
-            this.InputKey.TextChanged += new System.EventHandler(this.InputKey_TextChanged);
             // 
             // Key
             // 
@@ -354,6 +357,7 @@
             // 
             // TabSteganography
             // 
+            this.TabSteganography.Controls.Add(this.CopyStegano);
             this.TabSteganography.Controls.Add(this.BtS);
             this.TabSteganography.Controls.Add(this.textBox1);
             this.TabSteganography.Controls.Add(this.BtSnn);
@@ -374,6 +378,18 @@
             this.TabSteganography.TabIndex = 1;
             this.TabSteganography.Text = "Steganography";
             this.TabSteganography.UseVisualStyleBackColor = true;
+            // 
+            // CopyStegano
+            // 
+            this.CopyStegano.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            this.CopyStegano.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(192)))));
+            this.CopyStegano.Location = new System.Drawing.Point(563, 537);
+            this.CopyStegano.Name = "CopyStegano";
+            this.CopyStegano.Size = new System.Drawing.Size(75, 33);
+            this.CopyStegano.TabIndex = 34;
+            this.CopyStegano.Text = "Copy";
+            this.CopyStegano.UseVisualStyleBackColor = false;
+            this.CopyStegano.Click += new System.EventHandler(this.CopyStegano_Click);
             // 
             // BtS
             // 
@@ -396,6 +412,7 @@
             this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.textBox1.Size = new System.Drawing.Size(677, 96);
             this.textBox1.TabIndex = 32;
+            this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
             // 
             // BtSnn
             // 
@@ -406,6 +423,7 @@
             this.BtSnn.TabIndex = 31;
             this.BtSnn.Text = "Synonym";
             this.BtSnn.UseVisualStyleBackColor = true;
+            this.BtSnn.Click += new System.EventHandler(this.BtSnn_Click);
             // 
             // BtSp
             // 
@@ -482,6 +500,7 @@
             this.BtRs3.TabIndex = 23;
             this.BtRs3.Text = "Reset";
             this.BtRs3.UseVisualStyleBackColor = false;
+            this.BtRs3.Click += new System.EventHandler(this.BtRs3_Click);
             // 
             // Ciphertextname
             // 
@@ -503,8 +522,7 @@
             this.Steganogranophy.Name = "Steganogranophy";
             this.Steganogranophy.Size = new System.Drawing.Size(152, 22);
             this.Steganogranophy.TabIndex = 20;
-            this.Steganogranophy.Text = "Steganogranophy";
-            this.Steganogranophy.Click += new System.EventHandler(this.Steganogranophy_Click);
+            this.Steganogranophy.Text = "Steganography";
             // 
             // TabDecrytion
             // 
@@ -520,6 +538,7 @@
             this.TabDecrytion.Controls.Add(this.DecrytionBotton10);
             this.TabDecrytion.Controls.Add(this.CopyButton3);
             this.TabDecrytion.Controls.Add(this.BtRs6);
+            this.TabDecrytion.Controls.Add(this.BtSavePlain);
             this.TabDecrytion.Controls.Add(this.PlaintextDecry);
             this.TabDecrytion.Controls.Add(this.InputkeyDecry);
             this.TabDecrytion.Controls.Add(this.KeyDecry);
@@ -530,7 +549,7 @@
             this.TabDecrytion.Name = "TabDecrytion";
             this.TabDecrytion.Size = new System.Drawing.Size(798, 663);
             this.TabDecrytion.TabIndex = 2;
-            this.TabDecrytion.Text = "Decrytion";
+            this.TabDecrytion.Text = "Decryption";
             this.TabDecrytion.UseVisualStyleBackColor = true;
             // 
             // BtSnnD
@@ -542,6 +561,7 @@
             this.BtSnnD.TabIndex = 44;
             this.BtSnnD.Text = "Synonym";
             this.BtSnnD.UseVisualStyleBackColor = true;
+            this.BtSnnD.Click += new System.EventHandler(this.BtSnnD_Click);
             // 
             // BtSpD
             // 
@@ -552,6 +572,7 @@
             this.BtSpD.TabIndex = 43;
             this.BtSpD.Text = "Space";
             this.BtSpD.UseVisualStyleBackColor = true;
+            this.BtSpD.Click += new System.EventHandler(this.BtSpD_Click);
             // 
             // BtMsD
             // 
@@ -562,6 +583,7 @@
             this.BtMsD.TabIndex = 42;
             this.BtMsD.Text = "Misspelling";
             this.BtMsD.UseVisualStyleBackColor = true;
+            this.BtMsD.Click += new System.EventHandler(this.BtMsD_Click);
             // 
             // BtHmD
             // 
@@ -572,6 +594,7 @@
             this.BtHmD.TabIndex = 41;
             this.BtHmD.Text = "Homoglyph";
             this.BtHmD.UseVisualStyleBackColor = true;
+            this.BtHmD.Click += new System.EventHandler(this.BtHmD_Click);
             // 
             // label1
             // 
@@ -593,6 +616,7 @@
             this.OutputPlaintext.Location = new System.Drawing.Point(52, 421);
             this.OutputPlaintext.Multiline = true;
             this.OutputPlaintext.Name = "OutputPlaintext";
+            this.OutputPlaintext.ReadOnly = true;
             this.OutputPlaintext.Size = new System.Drawing.Size(677, 113);
             this.OutputPlaintext.TabIndex = 39;
             // 
@@ -633,6 +657,7 @@
             this.BtRs5.TabIndex = 35;
             this.BtRs5.Text = "Reset";
             this.BtRs5.UseVisualStyleBackColor = false;
+            this.BtRs5.Click += new System.EventHandler(this.BtRs5_Click);
             // 
             // DecrytionBotton10
             // 
@@ -645,6 +670,7 @@
             this.DecrytionBotton10.TabIndex = 34;
             this.DecrytionBotton10.Text = "Decryption";
             this.DecrytionBotton10.UseVisualStyleBackColor = false;
+            this.DecrytionBotton10.Click += new System.EventHandler(this.DecrytionBotton10_Click);
             // 
             // CopyButton3
             // 
@@ -657,6 +683,7 @@
             this.CopyButton3.TabIndex = 33;
             this.CopyButton3.Text = "Copy";
             this.CopyButton3.UseVisualStyleBackColor = false;
+            this.CopyButton3.Click += new System.EventHandler(this.CopyButton3_Click);
             // 
             // BtRs6
             // 
@@ -669,6 +696,20 @@
             this.BtRs6.TabIndex = 32;
             this.BtRs6.Text = "Reset";
             this.BtRs6.UseVisualStyleBackColor = false;
+            this.BtRs6.Click += new System.EventHandler(this.BtRs6_Click);
+            // 
+            // BtSavePlain
+            // 
+            this.BtSavePlain.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
+            this.BtSavePlain.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.BtSavePlain.ForeColor = System.Drawing.Color.DarkGreen;
+            this.BtSavePlain.Location = new System.Drawing.Point(566, 590);
+            this.BtSavePlain.Name = "BtSavePlain";
+            this.BtSavePlain.Size = new System.Drawing.Size(165, 35);
+            this.BtSavePlain.TabIndex = 45;
+            this.BtSavePlain.Text = "Save Plaintext";
+            this.BtSavePlain.UseVisualStyleBackColor = false;
+            this.BtSavePlain.Click += new System.EventHandler(this.BtSavePlain_Click);
             // 
             // PlaintextDecry
             // 
@@ -803,6 +844,7 @@
             this.steganographyInfoToolStripMenuItem.Name = "steganographyInfoToolStripMenuItem";
             this.steganographyInfoToolStripMenuItem.Size = new System.Drawing.Size(272, 34);
             this.steganographyInfoToolStripMenuItem.Text = "Steganography Info";
+            this.steganographyInfoToolStripMenuItem.Click += new System.EventHandler(this.steganographyInfoToolStripMenuItem_Click);
             // 
             // fileFormatToolStripMenuItem
             // 
@@ -901,6 +943,7 @@
         private System.Windows.Forms.Button BtSnn;
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.Button BtS;
+        private System.Windows.Forms.Button CopyStegano;
         private System.Windows.Forms.Button BtSnnD;
         private System.Windows.Forms.Button BtSpD;
         private System.Windows.Forms.Button BtMsD;
@@ -909,5 +952,6 @@
         private System.Windows.Forms.ToolStripMenuItem steganographyInfoToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem fileFormatToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem securityNoticeToolStripMenuItem;
+        private System.Windows.Forms.Button BtSavePlain;
     }
 }
