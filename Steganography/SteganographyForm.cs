@@ -269,6 +269,25 @@ namespace Steganography
             }
         }
 
+        private void BtNb_Click(object sender, EventArgs e)
+        {
+            // NBSP Embed
+            if (!ValidateSteganographyInput()) return;
+
+            var form = new NbspForm
+            {
+                IsEmbedMode = true,
+                CipherText  = textBox1.Text.Trim(),
+                CoverText   = GetCovertext()
+            };
+
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                TbStegano.Text = form.ResultText;
+                tsslLabel.Text = "NBSP Embed สำเร็จ  |  Steganotext: " + form.ResultText.Length + " chars";
+            }
+        }
+
         private void BtSnn_Click(object sender, EventArgs e)
         {
             // Synonym Embed
@@ -436,6 +455,21 @@ namespace Steganography
                 TriggerDecryption(form.ResultText);
         }
 
+        private void BtNbD_Click(object sender, EventArgs e)
+        {
+            // NBSP Extract
+            if (!ValidateDecryptionInput()) return;
+
+            var form = new NbspForm
+            {
+                IsEmbedMode      = false,
+                SteganotextInput = InputChipertext.Text
+            };
+
+            if (form.ShowDialog() == DialogResult.OK)
+                TriggerDecryption(form.ResultText);
+        }
+
         private void BtSnnD_Click(object sender, EventArgs e)
         {
             // Synonym Extract
@@ -594,7 +628,7 @@ namespace Steganography
                 "   • กด Encryption → ได้ Ciphertext\n\n" +
                 "2. [แท็บ Steganography]\n" +
                 "   • Ciphertext จะ sync มาอัตโนมัติ\n" +
-                "   • เลือกเทคนิค: Homoglyph / Misspelling / Space / Synonym\n" +
+                "   • เลือกเทคนิค: Homoglyph / Misspelling / Space / NBSP / Synonym\n" +
                 "   • เลือก options ใน dialog แล้วกด ตกลง\n" +
                 "   • ได้ Steganotext → กด Save บันทึก\n\n" +
                 "─── ขั้นตอนถอดข้อความ ───\n" +
@@ -615,7 +649,7 @@ namespace Steganography
                 "เทคนิค Steganography ที่รองรับ\n\n" +
                 "1. Homoglyph\n" +
                 "   แทนตัวอักษรไทยที่หน้าตาคล้ายกัน\n" +
-                "   ฎ↔ฏ  เ↔แ  ด↔ต  ข↔ฃ  ช↔ซ\n" +
+                "   ฎ↔ฏ  ข↔ฃ  ช↔ซ\n" +
                 "   ข้อจำกัด: Covertext ต้องมีตัวอักษรที่เลือกเพียงพอ\n\n" +
                 "2. Misspelling\n" +
                 "   แทนคำด้วยการสะกดผิดที่กำหนดไว้ล่วงหน้า\n" +
@@ -625,11 +659,15 @@ namespace Steganography
                 "   แทรก U+200B ระหว่างตัวอักษร\n" +
                 "   มี ZWSP = bit 1 / ไม่มี = bit 0\n" +
                 "   ความจุ = จำนวนตัวอักษรใน Covertext - 1\n\n" +
-                "4. Synonym\n" +
+                "4. Non-Breaking Space (NBSP)\n" +
+                "   แทนที่ space ปกติ (U+0020) ด้วย NBSP (U+00A0)\n" +
+                "   NBSP = bit 1 / space ปกติ = bit 0\n" +
+                "   ความจุ = จำนวน space ใน Covertext\n\n" +
+                "5. Synonym\n" +
                 "   สลับคำพ้องความหมายในกลุ่มที่เลือก\n" +
                 "   คำแรกในกลุ่ม = bit 0 / คำที่สองในกลุ่ม = bit 1\n" +
                 "   มีกลุ่มคำพ้องให้เลือก 64 กลุ่ม\n\n" +
-                "Payload format: [32-bit length][data bits] (UTF-8, MSB first)",
+                "Payload format: [32-bit length][16-bit CRC][data bits] (UTF-8, MSB first)",
                 "ข้อมูล Steganography",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information

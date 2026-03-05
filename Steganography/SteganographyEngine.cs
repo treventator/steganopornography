@@ -6,7 +6,7 @@ namespace Steganography
 {
     /// <summary>
     /// เครื่องมือหลักสำหรับฝังและดึงข้อความลับในข้อความปกปิด
-    /// รองรับ 4 เทคนิค: Homoglyph, Misspelling, ZWSP, Synonym
+    /// รองรับ 5 เทคนิค: Homoglyph, Misspelling, ZWSP, NBSP, Synonym
     ///
     /// รูปแบบ payload ที่ฝัง:
     ///   [32-bit length header][16-bit CRC-16][ข้อมูล bits]
@@ -268,6 +268,61 @@ namespace Steganography
                     prevWasNormal = true;
                     prevHadZWSP = false;
                 }
+            }
+
+            return PayloadBitsToString(bits.ToArray());
+        }
+
+        // ============================================================
+        //  NBSP (Non-Breaking Space  U+00A0)
+        //  แทนที่ space ปกติ (U+0020) ด้วย NBSP (U+00A0)
+        //  space ปกติ = bit 0, NBSP = bit 1
+        // ============================================================
+
+        private const char NBSP = '\u00A0';
+
+        public static string NBSPEmbed(string coverText, string cipherText)
+        {
+            bool[] bits = StringToPayloadBits(cipherText);
+
+            // นับจำนวน space ปกติใน covertext
+            int spaceCount = 0;
+            foreach (char c in coverText)
+                if (c == ' ') spaceCount++;
+
+            if (spaceCount < bits.Length)
+                throw new InvalidOperationException(
+                    $"Covertext มี space ไม่เพียงพอ (ต้องการ {bits.Length} ช่อง แต่มี space {spaceCount} ตัว)");
+
+            var sb = new StringBuilder(coverText.Length);
+            int bitIdx = 0;
+
+            foreach (char c in coverText)
+            {
+                if (c == ' ' && bitIdx < bits.Length)
+                {
+                    sb.Append(bits[bitIdx] ? NBSP : ' ');
+                    bitIdx++;
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        public static string NBSPExtract(string steganotext)
+        {
+            var bits = new List<bool>();
+
+            foreach (char c in steganotext)
+            {
+                if (c == ' ')
+                    bits.Add(false);
+                else if (c == NBSP)
+                    bits.Add(true);
             }
 
             return PayloadBitsToString(bits.ToArray());

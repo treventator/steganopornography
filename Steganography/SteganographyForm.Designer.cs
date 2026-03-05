@@ -56,6 +56,7 @@ namespace Steganography
             this.CopyStegano = new System.Windows.Forms.Button();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.BtSnn = new System.Windows.Forms.Button();
+            this.BtNb = new System.Windows.Forms.Button();
             this.BtSp = new System.Windows.Forms.Button();
             this.BtMs = new System.Windows.Forms.Button();
             this.BtHm = new System.Windows.Forms.Button();
@@ -67,6 +68,7 @@ namespace Steganography
             this.Steganogranophy = new System.Windows.Forms.Label();
             this.TabDecrytion = new System.Windows.Forms.TabPage();
             this.BtSnnD = new System.Windows.Forms.Button();
+            this.BtNbD = new System.Windows.Forms.Button();
             this.BtSpD = new System.Windows.Forms.Button();
             this.BtMsD = new System.Windows.Forms.Button();
             this.BtHmD = new System.Windows.Forms.Button();
@@ -361,6 +363,7 @@ namespace Steganography
             this.TabSteganography.Controls.Add(this.BtS);
             this.TabSteganography.Controls.Add(this.textBox1);
             this.TabSteganography.Controls.Add(this.BtSnn);
+            this.TabSteganography.Controls.Add(this.BtNb);
             this.TabSteganography.Controls.Add(this.BtSp);
             this.TabSteganography.Controls.Add(this.BtMs);
             this.TabSteganography.Controls.Add(this.BtHm);
@@ -415,43 +418,54 @@ namespace Steganography
             this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
             // 
             // BtSnn
-            // 
+            //
             this.BtSnn.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.BtSnn.Location = new System.Drawing.Point(445, 267);
+            this.BtSnn.Location = new System.Drawing.Point(483, 267);
             this.BtSnn.Name = "BtSnn";
-            this.BtSnn.Size = new System.Drawing.Size(100, 37);
+            this.BtSnn.Size = new System.Drawing.Size(85, 37);
             this.BtSnn.TabIndex = 31;
             this.BtSnn.Text = "Synonym";
             this.BtSnn.UseVisualStyleBackColor = true;
             this.BtSnn.Click += new System.EventHandler(this.BtSnn_Click);
-            // 
+            //
+            // BtNb
+            //
+            this.BtNb.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.BtNb.Location = new System.Drawing.Point(412, 267);
+            this.BtNb.Name = "BtNb";
+            this.BtNb.Size = new System.Drawing.Size(65, 37);
+            this.BtNb.TabIndex = 32;
+            this.BtNb.Text = "NBSP";
+            this.BtNb.UseVisualStyleBackColor = true;
+            this.BtNb.Click += new System.EventHandler(this.BtNb_Click);
+            //
             // BtSp
-            // 
+            //
             this.BtSp.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.BtSp.Location = new System.Drawing.Point(364, 267);
+            this.BtSp.Location = new System.Drawing.Point(341, 267);
             this.BtSp.Name = "BtSp";
-            this.BtSp.Size = new System.Drawing.Size(75, 37);
+            this.BtSp.Size = new System.Drawing.Size(65, 37);
             this.BtSp.TabIndex = 30;
             this.BtSp.Text = "Space";
             this.BtSp.UseVisualStyleBackColor = true;
             this.BtSp.Click += new System.EventHandler(this.Btsp_Click);
-            // 
+            //
             // BtMs
-            // 
+            //
             this.BtMs.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.BtMs.Location = new System.Drawing.Point(250, 267);
+            this.BtMs.Location = new System.Drawing.Point(240, 267);
             this.BtMs.Name = "BtMs";
-            this.BtMs.Size = new System.Drawing.Size(108, 37);
+            this.BtMs.Size = new System.Drawing.Size(95, 37);
             this.BtMs.TabIndex = 29;
             this.BtMs.Text = "Misspelling";
             this.BtMs.UseVisualStyleBackColor = true;
             this.BtMs.Click += new System.EventHandler(this.BtMs_Click);
-            // 
+            //
             // BtHm
-            // 
+            //
             this.BtHm.Location = new System.Drawing.Point(134, 267);
             this.BtHm.Name = "BtHm";
-            this.BtHm.Size = new System.Drawing.Size(110, 37);
+            this.BtHm.Size = new System.Drawing.Size(100, 37);
             this.BtHm.TabIndex = 28;
             this.BtHm.Text = "Homoglyph";
             this.BtHm.UseVisualStyleBackColor = true;
@@ -527,6 +541,7 @@ namespace Steganography
             // TabDecrytion
             // 
             this.TabDecrytion.Controls.Add(this.BtSnnD);
+            this.TabDecrytion.Controls.Add(this.BtNbD);
             this.TabDecrytion.Controls.Add(this.BtSpD);
             this.TabDecrytion.Controls.Add(this.BtMsD);
             this.TabDecrytion.Controls.Add(this.BtHmD);
@@ -553,44 +568,55 @@ namespace Steganography
             this.TabDecrytion.UseVisualStyleBackColor = true;
             // 
             // BtSnnD
-            // 
+            //
             this.BtSnnD.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.BtSnnD.Location = new System.Drawing.Point(448, 309);
+            this.BtSnnD.Location = new System.Drawing.Point(486, 309);
             this.BtSnnD.Name = "BtSnnD";
-            this.BtSnnD.Size = new System.Drawing.Size(100, 37);
+            this.BtSnnD.Size = new System.Drawing.Size(85, 37);
             this.BtSnnD.TabIndex = 44;
             this.BtSnnD.Text = "Synonym";
             this.BtSnnD.UseVisualStyleBackColor = true;
             this.BtSnnD.Click += new System.EventHandler(this.BtSnnD_Click);
-            // 
+            //
+            // BtNbD
+            //
+            this.BtNbD.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.BtNbD.Location = new System.Drawing.Point(415, 309);
+            this.BtNbD.Name = "BtNbD";
+            this.BtNbD.Size = new System.Drawing.Size(65, 37);
+            this.BtNbD.TabIndex = 45;
+            this.BtNbD.Text = "NBSP";
+            this.BtNbD.UseVisualStyleBackColor = true;
+            this.BtNbD.Click += new System.EventHandler(this.BtNbD_Click);
+            //
             // BtSpD
-            // 
+            //
             this.BtSpD.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.BtSpD.Location = new System.Drawing.Point(367, 309);
+            this.BtSpD.Location = new System.Drawing.Point(344, 309);
             this.BtSpD.Name = "BtSpD";
-            this.BtSpD.Size = new System.Drawing.Size(75, 37);
+            this.BtSpD.Size = new System.Drawing.Size(65, 37);
             this.BtSpD.TabIndex = 43;
             this.BtSpD.Text = "Space";
             this.BtSpD.UseVisualStyleBackColor = true;
             this.BtSpD.Click += new System.EventHandler(this.BtSpD_Click);
-            // 
+            //
             // BtMsD
-            // 
+            //
             this.BtMsD.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.BtMsD.Location = new System.Drawing.Point(253, 309);
+            this.BtMsD.Location = new System.Drawing.Point(243, 309);
             this.BtMsD.Name = "BtMsD";
-            this.BtMsD.Size = new System.Drawing.Size(108, 37);
+            this.BtMsD.Size = new System.Drawing.Size(95, 37);
             this.BtMsD.TabIndex = 42;
             this.BtMsD.Text = "Misspelling";
             this.BtMsD.UseVisualStyleBackColor = true;
             this.BtMsD.Click += new System.EventHandler(this.BtMsD_Click);
-            // 
+            //
             // BtHmD
-            // 
+            //
             this.BtHmD.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.BtHmD.Location = new System.Drawing.Point(137, 309);
             this.BtHmD.Name = "BtHmD";
-            this.BtHmD.Size = new System.Drawing.Size(110, 37);
+            this.BtHmD.Size = new System.Drawing.Size(100, 37);
             this.BtHmD.TabIndex = 41;
             this.BtHmD.Text = "Homoglyph";
             this.BtHmD.UseVisualStyleBackColor = true;
@@ -941,10 +967,12 @@ namespace Steganography
         private System.Windows.Forms.Button BtMs;
         private System.Windows.Forms.Label LbFn;
         private System.Windows.Forms.Button BtSnn;
+        private System.Windows.Forms.Button BtNb;
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.Button BtS;
         private System.Windows.Forms.Button CopyStegano;
         private System.Windows.Forms.Button BtSnnD;
+        private System.Windows.Forms.Button BtNbD;
         private System.Windows.Forms.Button BtSpD;
         private System.Windows.Forms.Button BtMsD;
         private System.Windows.Forms.Button BtHmD;
