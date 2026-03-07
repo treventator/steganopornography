@@ -62,6 +62,12 @@
     <Compile Include="OptionStaganogryphy.Designer.cs">
       <DependentUpon>OptionStaganogryphy.cs</DependentUpon>
     </Compile>
+    <Compile Include="Nbsp.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Nbsp.Designer.cs">
+      <DependentUpon>Nbsp.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="CryptoHelper.cs" />
     <Compile Include="SteganographyEngine.cs" />
@@ -100,6 +106,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="Nbsp.resx">
+      <DependentUpon>Nbsp.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Space.resx">
       <DependentUpon>Space.cs</DependentUpon>
     </EmbeddedResource>

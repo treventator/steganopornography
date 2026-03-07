@@ -30,6 +30,8 @@ Steganography/
 ├── Misspelling.Designer.cs
 ├── Space.cs                      # Sub-form: Zero-Width Space (U+200B)
 ├── Space.Designer.cs
+├── Nbsp.cs                       # Sub-form: Non-Breaking Space (U+00A0)
+├── Nbsp.Designer.cs
 ├── Synonym.cs                    # Sub-form: Synonym (64 กลุ่มคำพ้อง)
 ├── Synonym.Designer.cs
 ├── Steganography.csproj          # MSBuild project (include ทุกไฟล์แล้ว)
@@ -53,7 +55,7 @@ Steganography/
 
 [Tab: Steganography]
   textBox1 (Ciphertext) + InputCovertext (Covertext จาก Encryption tab)
-    → เลือกเทคนิค (BtHm / BtMs / BtSp)
+    → เลือกเทคนิค (BtHm / BtMs / BtSp / BtNb / BtSnn)
     → เปิด sub-form → ผู้ใช้เลือก options → กด ตกลง
     → SteganographyEngine.Xxx Embed(coverText, cipherText, options)
     → TbStegano (Steganotext)  → Save / Copy
@@ -64,7 +66,7 @@ Steganography/
 ```
 [Tab: Decryption]
   InputChipertext (Steganotext) + InputkeyDecry (Key)
-    → เลือกเทคนิค (BtHmD / BtMsD / BtSpD)
+    → เลือกเทคนิค (BtHmD / BtMsD / BtSpD / BtNbD / BtSnnD)
     → เปิด sub-form → เลือก options เดิม → กด ตกลง
     → SteganographyEngine.Xxx Extract(steganotext, options)
     → Base64 Ciphertext
@@ -121,7 +123,15 @@ string result = SteganographyEngine.PayloadBitsToString(extractedBits);
 - ความจุ = `coverText.Length - 1` bits
 - **ข้อดี**: ไม่ต้องเลือก options ใดๆ ใช้ได้กับทุก covertext
 
-### 4.5 Synonym Technique
+### 4.5 NBSP Technique
+
+- ใช้ `U+00A0` (Non-Breaking Space) แทนที่ space ปกติ `U+0020` ใน covertext
+- space ปกติ = bit 0, NBSP = bit 1
+- ความจุ = จำนวน space ใน covertext
+- **ข้อดี**: ไม่ต้องเลือก options ใดๆ มองไม่เห็นด้วยตาเปล่า
+- **ข้อเสีย**: ความจุต่ำกว่า ZWSP (ขึ้นกับจำนวน space)
+
+### 4.6 Synonym Technique
 
 - **64 กลุ่มคำพ้อง** ใน `SteganographyEngine.SynonymGroups`
 - คำ index 0 ในกลุ่ม = bit 0, คำ index 1 = bit 1
@@ -198,6 +208,7 @@ if (form.ShowDialog() == DialogResult.OK)
 | Homoglyph Embed/Extract | ✅ สมบูรณ์ |
 | Misspelling Embed/Extract | ✅ สมบูรณ์ |
 | ZWSP Embed/Extract | ✅ สมบูรณ์ |
+| NBSP Embed/Extract | ✅ สมบูรณ์ |
 | Synonym Embed/Extract | ✅ สมบูรณ์ (64 กลุ่มคำพ้อง) |
 | Drag & Drop (InputPlaintext + InputChipertext) | ✅ สมบูรณ์ |
 | Sync Ciphertext อัตโนมัติ | ✅ สมบูรณ์ |

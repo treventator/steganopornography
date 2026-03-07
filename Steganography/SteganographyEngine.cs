@@ -6,7 +6,7 @@ namespace Steganography
 {
     /// <summary>
     /// เครื่องมือหลักสำหรับฝังและดึงข้อความลับในข้อความปกปิด
-    /// รองรับ 4 เทคนิค: Homoglyph, Misspelling, ZWSP, Synonym
+    /// รองรับ 5 เทคนิค: Homoglyph, Misspelling, ZWSP, NBSP, Synonym
     ///
     /// หลักการทำงาน (Embed):
     ///   ciphertext (Base64 string) → bytes → bits → ฝังในข้อความ covertext
@@ -261,6 +261,23 @@ namespace Steganography
         // ============================================================
 
         private const char ZWSP = '\u200B';
+        private const char NBSP = '\u00A0';
+
+        /// <summary>
+        /// Normalize covertext ก่อน embed: ลบ ZWSP และแทน NBSP ด้วย space ปกติ
+        /// ป้องกันปัญหา pre-existing invisible chars ที่จะทำให้ extract ผิดพลาด
+        /// </summary>
+        private static string NormalizeCovertext(string coverText)
+        {
+            var sb = new StringBuilder(coverText.Length);
+            foreach (char c in coverText)
+            {
+                if (c == ZWSP) continue;
+                if (c == NBSP) { sb.Append(' '); continue; }
+                sb.Append(c);
+            }
+            return sb.ToString();
+        }
 
         /// <summary>
         /// ฝัง ciphertext ลงใน covertext ด้วยเทคนิค Zero-Width Space
@@ -269,6 +286,7 @@ namespace Steganography
         /// </summary>
         public static string ZWSPEmbed(string coverText, string cipherText)
         {
+            coverText = NormalizeCovertext(coverText);
             bool[] bits = StringToPayloadBits(cipherText);
 
             // จำนวน "ช่องว่าง" ระหว่างตัวอักษร = coverText.Length - 1
@@ -316,6 +334,59 @@ namespace Steganography
                     prevWasNormal = true;
                     prevHadZWSP = false;
                 }
+            }
+
+            return PayloadBitsToString(bits.ToArray());
+        }
+
+        // ============================================================
+        //  NBSP (Non-Breaking Space  U+00A0)
+        //  แทนที่ space ปกติ (U+0020) ด้วย NBSP (U+00A0)
+        //  space ปกติ = bit 0, NBSP = bit 1
+        // ============================================================
+
+        public static string NBSPEmbed(string coverText, string cipherText)
+        {
+            coverText = NormalizeCovertext(coverText);
+            bool[] bits = StringToPayloadBits(cipherText);
+
+            int spaceCount = 0;
+            foreach (char c in coverText)
+                if (c == ' ') spaceCount++;
+
+            if (spaceCount < bits.Length)
+                throw new InvalidOperationException(
+                    $"Covertext มี space ไม่เพียงพอ (ต้องการ {bits.Length} ช่อง แต่มี space {spaceCount} ตัว)");
+
+            var sb = new StringBuilder(coverText.Length);
+            int bitIdx = 0;
+
+            foreach (char c in coverText)
+            {
+                if (c == ' ' && bitIdx < bits.Length)
+                {
+                    sb.Append(bits[bitIdx] ? NBSP : ' ');
+                    bitIdx++;
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        public static string NBSPExtract(string steganotext)
+        {
+            var bits = new List<bool>();
+
+            foreach (char c in steganotext)
+            {
+                if (c == ' ')
+                    bits.Add(false);
+                else if (c == NBSP)
+                    bits.Add(true);
             }
 
             return PayloadBitsToString(bits.ToArray());

@@ -269,6 +269,24 @@ namespace Steganography
             }
         }
 
+        private void BtNb_Click(object sender, EventArgs e)
+        {
+            if (!ValidateSteganographyInput()) return;
+
+            var form = new NbspForm
+            {
+                IsEmbedMode = true,
+                CipherText  = textBox1.Text.Trim(),
+                CoverText   = GetCovertext()
+            };
+
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                TbStegano.Text = form.ResultText;
+                tsslLabel.Text = "NBSP Embed สำเร็จ  |  Steganotext: " + form.ResultText.Length + " chars";
+            }
+        }
+
         private void BtSnn_Click(object sender, EventArgs e)
         {
             // Synonym Embed
@@ -364,8 +382,11 @@ namespace Steganography
                 bool[] bits    = SteganographyEngine.StringToPayloadBits(cipherText);
                 int needed     = bits.Length;
                 int zwspSlots  = Math.Max(0, coverText.Length - 1);
-                tsslLabel.Text = $"ต้องการ {needed} bits  |  ZWSP รองรับ {zwspSlots} bits" +
-                                 (zwspSlots >= needed ? "  ✓" : "  ✗ (Covertext สั้นเกินไปสำหรับ ZWSP)");
+                int nbspSlots  = 0;
+                foreach (char c in coverText)
+                    if (c == ' ' || c == '\u00A0') nbspSlots++;
+                tsslLabel.Text = $"ต้องการ {needed} bits  |  ZWSP: {zwspSlots}  NBSP: {nbspSlots}" +
+                                 (zwspSlots >= needed ? "  ✓" : "  ✗ (Covertext สั้นเกินไป)");
             }
             catch { }
         }
@@ -432,6 +453,20 @@ namespace Steganography
                 IsEmbedMode      = false,
                 SteganotextInput = InputChipertext.Text
             };
+            if (form.ShowDialog() == DialogResult.OK)
+                TriggerDecryption(form.ResultText);
+        }
+
+        private void BtNbD_Click(object sender, EventArgs e)
+        {
+            if (!ValidateDecryptionInput()) return;
+
+            var form = new NbspForm
+            {
+                IsEmbedMode      = false,
+                SteganotextInput = InputChipertext.Text
+            };
+
             if (form.ShowDialog() == DialogResult.OK)
                 TriggerDecryption(form.ResultText);
         }
