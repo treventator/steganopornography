@@ -6,42 +6,59 @@ namespace Steganography
 {
     /// <summary>
     /// เครื่องมือหลักสำหรับฝังและดึงข้อความลับในข้อความปกปิด
-    /// รองรับ 5 เทคนิค: Homoglyph, Misspelling, ZWSP, NBSP, Synonym
+    /// รองรับ 4 เทคนิค: Homoglyph, Misspelling, ZWSP, Synonym
+    ///
+    /// หลักการทำงาน (Embed):
+    ///   ciphertext (Base64 string) → bytes → bits → ฝังในข้อความ covertext
+    ///
+    /// หลักการทำงาน (Extract):
+    ///   steganotext → อ่าน bits → bytes → Base64 ciphertext string
     ///
     /// รูปแบบ payload ที่ฝัง:
-    ///   [32-bit length header][16-bit CRC-16][ข้อมูล bits]
-    ///   [H1 FIX] เพิ่ม CRC-16 เพื่อตรวจสอบ integrity ก่อน AES decrypt
+    ///   [32-bit length header][ข้อมูล bits ของ ciphertext bytes]
+    ///   - length = จำนวน bytes ของ ciphertext (ไม่ใช่จำนวน bits)
+    ///   - เก็บเป็น big-endian 32 บิต = 32 ตำแหน่งแรก
     /// </summary>
     public static class SteganographyEngine
     {
         // ============================================================
         //  HOMOGLYPH
-        //  [M1 FIX] ลบคู่ เ↔แ (เปลี่ยนความหมาย: เก่า→แก่า)
-        //  [M2 FIX] ลบคู่ ด↔ต (เปลี่ยนความหมาย: ดี→ตี)
-        //  คงเหลือ 3 คู่ที่ glyph คล้ายกันจริงๆ
         // ============================================================
 
+        /// <summary>
+        /// คู่ตัวอักษร Homoglyph: (ตัวจริง, ตัวแทน)
+        /// bit 0 = ใช้ตัวจริง (index 0), bit 1 = ใช้ตัวแทน (index 1)
+        /// </summary>
         public static readonly (char Original, char Glyph)[] HomoglyphPairs = new[]
         {
-            ('ฎ', 'ฏ'),   // pair 0  — ดอชะดา / ปะตัก (glyph คล้ายมาก)
-            ('ข', 'ฃ'),   // pair 1  — ขอไข่ / ขอขวด (ฃ เลิกใช้แล้ว, glyph คล้าย)
-            ('ช', 'ซ'),   // pair 2  — ชอช้าง / ซอโซ่ (glyph คล้าย)
+            ('ฎ', 'ฏ'),   // pair 0  — ChkbxDochada
+            ('ข', 'ฃ'),   // pair 1  — ChkbxKhoKhai
+            ('ช', 'ซ'),   // pair 2  — ChkbxChoChang
         };
 
+        /// <summary>
+        /// ฝัง ciphertext ลงใน covertext ด้วยเทคนิค Homoglyph
+        /// </summary>
+        /// <param name="coverText">ข้อความปกปิด (ต้องมีตัวอักษรใน HomoglyphPairs เพียงพอ)</param>
+        /// <param name="cipherText">Base64 ciphertext ที่จะฝัง</param>
+        /// <param name="activePairs">index ของคู่ที่ผู้ใช้เลือก (เช่น {0,1,3})</param>
+        /// <returns>steganotext</returns>
         public static string HomoglyphEmbed(string coverText, string cipherText, IList<int> activePairs)
         {
             if (activePairs == null || activePairs.Count == 0)
                 throw new InvalidOperationException("กรุณาเลือกคู่ตัวอักษร Homoglyph อย่างน้อย 1 คู่");
 
+            // สร้าง lookup: ตัวอักษรใดใน covertext ที่เราสามารถแทนได้
             var originalToGlyph = new Dictionary<char, char>();
             var glyphToOriginal = new Dictionary<char, char>();
             foreach (int idx in activePairs)
             {
                 var p = HomoglyphPairs[idx];
                 originalToGlyph[p.Original] = p.Glyph;
-                glyphToOriginal[p.Glyph] = p.Original;
+                glyphToOriginal[p.Glyph] = p.Original; // คืนค่าเดิมเมื่อ extract
             }
 
+            // แปลง ciphertext → payload bits (32-bit header + data bits)
             bool[] bits = StringToPayloadBits(cipherText);
 
             var result = new StringBuilder(coverText);
@@ -50,10 +67,12 @@ namespace Steganography
             for (int i = 0; i < result.Length && bitIdx < bits.Length; i++)
             {
                 char c = result[i];
+                // normalize: ถ้าเป็น glyph ให้แปลงกลับเป็น original ก่อนตัดสินใจ
                 char original = glyphToOriginal.ContainsKey(c) ? glyphToOriginal[c] : c;
 
                 if (originalToGlyph.ContainsKey(original))
                 {
+                    // bit 0 → ใช้ original, bit 1 → ใช้ glyph
                     result[i] = bits[bitIdx] ? originalToGlyph[original] : original;
                     bitIdx++;
                 }
@@ -66,6 +85,9 @@ namespace Steganography
             return result.ToString();
         }
 
+        /// <summary>
+        /// ดึง ciphertext จาก steganotext ด้วยเทคนิค Homoglyph
+        /// </summary>
         public static string HomoglyphExtract(string steganotextInput, IList<int> activePairs)
         {
             if (activePairs == null || activePairs.Count == 0)
@@ -73,21 +95,23 @@ namespace Steganography
 
             var originalSet = new HashSet<char>();
             var glyphSet = new HashSet<char>();
+            var glyphToOriginal = new Dictionary<char, char>();
 
             foreach (int idx in activePairs)
             {
                 var p = HomoglyphPairs[idx];
                 originalSet.Add(p.Original);
                 glyphSet.Add(p.Glyph);
+                glyphToOriginal[p.Glyph] = p.Original;
             }
 
             var extractedBits = new List<bool>();
             foreach (char c in steganotextInput)
             {
                 if (originalSet.Contains(c))
-                    extractedBits.Add(false);
+                    extractedBits.Add(false); // bit 0
                 else if (glyphSet.Contains(c))
-                    extractedBits.Add(true);
+                    extractedBits.Add(true);  // bit 1
             }
 
             return PayloadBitsToString(extractedBits.ToArray());
@@ -95,9 +119,13 @@ namespace Steganography
 
         // ============================================================
         //  MISSPELLING
-        //  [M3 FIX] เพิ่ม IsPartOfLongerPairWord() ป้องกัน substring overlap
         // ============================================================
 
+        /// <summary>
+        /// รายการคู่คำ (คำถูก, คำผิด) ที่ใช้ในการฝัง
+        /// bit 0 = คำถูก, bit 1 = คำผิด
+        /// ดึงมาจาก Misspelling.Designer.cs (ลำดับตรงกัน)
+        /// </summary>
         public static readonly (string Correct, string Wrong)[] MisspellingPairs = new[]
         {
             ("กบฏ",                      "กบฎ"),
@@ -167,6 +195,11 @@ namespace Steganography
             ("ผูกพัน",                   "ผูกพันธ์"),
         };
 
+        /// <summary>
+        /// ฝัง ciphertext ลงใน covertext ด้วยเทคนิค Misspelling
+        /// แต่ละคำ Correct/Wrong ใน covertext = 1 bit
+        /// </summary>
+        /// <param name="activePairIndices">index ของคู่คำที่ผู้ใช้เลือก (ต้องมีอยู่ใน covertext)</param>
         public static string MisspellingEmbed(string coverText, string cipherText, IList<int> activePairIndices)
         {
             if (activePairIndices == null || activePairIndices.Count == 0)
@@ -184,7 +217,7 @@ namespace Steganography
             {
                 if (bitIdx >= bits.Length) break;
 
-                bool wantBit1 = bits[bitIdx];
+                bool wantBit1 = bits[bitIdx]; // true = ต้องการคำผิด, false = คำถูก
                 string target = wantBit1
                     ? MisspellingPairs[pairIdx].Wrong
                     : MisspellingPairs[pairIdx].Correct;
@@ -203,6 +236,9 @@ namespace Steganography
             return sb.ToString();
         }
 
+        /// <summary>
+        /// ดึง ciphertext จาก steganotext ด้วยเทคนิค Misspelling
+        /// </summary>
         public static string MisspellingExtract(string steganotext, IList<int> activePairIndices)
         {
             if (activePairIndices == null || activePairIndices.Count == 0)
@@ -213,6 +249,7 @@ namespace Steganography
 
             foreach (var (_, pairIdx, isCorrect, _) in candidates)
             {
+                // isCorrect = true → คำถูก = bit 0, isCorrect = false → คำผิด = bit 1
                 extractedBits.Add(!isCorrect);
             }
 
@@ -226,26 +263,15 @@ namespace Steganography
         private const char ZWSP = '\u200B';
 
         /// <summary>
-        /// Normalize covertext ก่อน embed: ลบ ZWSP และแทน NBSP ด้วย space ปกติ
-        /// ป้องกันปัญหา pre-existing invisible chars ที่จะทำให้ extract ผิดพลาด
+        /// ฝัง ciphertext ลงใน covertext ด้วยเทคนิค Zero-Width Space
+        /// แทรก ZWSP ระหว่างตัวอักษรทุกคู่ใน covertext:
+        ///   bit 1 → แทรก ZWSP, bit 0 → ไม่แทรก
         /// </summary>
-        private static string NormalizeCovertext(string coverText)
-        {
-            var sb = new StringBuilder(coverText.Length);
-            foreach (char c in coverText)
-            {
-                if (c == ZWSP) continue;        // strip ZWSP
-                if (c == NBSP) { sb.Append(' '); continue; } // NBSP → space
-                sb.Append(c);
-            }
-            return sb.ToString();
-        }
-
         public static string ZWSPEmbed(string coverText, string cipherText)
         {
-            coverText = NormalizeCovertext(coverText);
             bool[] bits = StringToPayloadBits(cipherText);
 
+            // จำนวน "ช่องว่าง" ระหว่างตัวอักษร = coverText.Length - 1
             int slots = coverText.Length - 1;
             if (slots < bits.Length)
                 throw new InvalidOperationException(
@@ -263,9 +289,13 @@ namespace Steganography
             return sb.ToString();
         }
 
+        /// <summary>
+        /// ดึง ciphertext จาก steganotext ด้วยเทคนิค ZWSP
+        /// </summary>
         public static string ZWSPExtract(string steganotext)
         {
             var bits = new List<bool>();
+            // อ่าน bit จากช่องว่างระหว่างตัวอักษร (ไม่นับ ZWSP เป็นตัวอักษร)
             bool prevWasNormal = false;
             bool prevHadZWSP = false;
 
@@ -280,6 +310,7 @@ namespace Steganography
                 {
                     if (prevWasNormal)
                     {
+                        // ระหว่าง normal char สองตัว → บันทึก bit
                         bits.Add(prevHadZWSP);
                     }
                     prevWasNormal = true;
@@ -291,238 +322,50 @@ namespace Steganography
         }
 
         // ============================================================
-        //  NBSP (Non-Breaking Space  U+00A0)
-        //  แทนที่ space ปกติ (U+0020) ด้วย NBSP (U+00A0)
-        //  space ปกติ = bit 0, NBSP = bit 1
-        // ============================================================
-
-        private const char NBSP = '\u00A0';
-
-        public static string NBSPEmbed(string coverText, string cipherText)
-        {
-            coverText = NormalizeCovertext(coverText);
-            bool[] bits = StringToPayloadBits(cipherText);
-
-            // นับจำนวน space ปกติใน covertext
-            int spaceCount = 0;
-            foreach (char c in coverText)
-                if (c == ' ') spaceCount++;
-
-            if (spaceCount < bits.Length)
-                throw new InvalidOperationException(
-                    $"Covertext มี space ไม่เพียงพอ (ต้องการ {bits.Length} ช่อง แต่มี space {spaceCount} ตัว)");
-
-            var sb = new StringBuilder(coverText.Length);
-            int bitIdx = 0;
-
-            foreach (char c in coverText)
-            {
-                if (c == ' ' && bitIdx < bits.Length)
-                {
-                    sb.Append(bits[bitIdx] ? NBSP : ' ');
-                    bitIdx++;
-                }
-                else
-                {
-                    sb.Append(c);
-                }
-            }
-
-            return sb.ToString();
-        }
-
-        public static string NBSPExtract(string steganotext)
-        {
-            var bits = new List<bool>();
-
-            foreach (char c in steganotext)
-            {
-                if (c == ' ')
-                    bits.Add(false);
-                else if (c == NBSP)
-                    bits.Add(true);
-            }
-
-            return PayloadBitsToString(bits.ToArray());
-        }
-
-        // ============================================================
-        //  SYNONYM
-        //  [M4 FIX] เพิ่ม word boundary check สำหรับคำสั้น
-        // ============================================================
-
-        public static readonly string[][] SynonymGroups = new[]
-        {
-            new[] { "กล่าว",        "พูด" },
-            new[] { "ได้รับ",       "ได้มา" },
-            new[] { "ทำ",           "กระทำ" },
-            new[] { "ใช้",          "นำมาใช้" },
-            new[] { "มอง",          "เฝ้ามอง" },
-            new[] { "เดิน",         "ย่าง" },
-            new[] { "คิด",          "ไตร่ตรอง" },
-            new[] { "หยุด",         "หยุดชะงัก" },
-            new[] { "ต้องการ",      "ประสงค์" },
-            new[] { "เริ่ม",        "เริ่มต้น" },
-            new[] { "เสร็จ",        "เสร็จสิ้น" },
-            new[] { "ช่วย",         "ให้ความช่วยเหลือ" },
-            new[] { "บอก",          "แจ้ง" },
-            new[] { "ถาม",          "สอบถาม" },
-            new[] { "ตอบ",          "ตอบรับ" },
-            new[] { "รู้จัก",        "ทราบ" },
-            new[] { "เข้าใจ",       "ตระหนัก" },
-            new[] { "ส่ง",          "จัดส่ง" },
-            new[] { "รับทราบ",      "รับมอบ" },
-            new[] { "สร้าง",        "ก่อสร้าง" },
-            new[] { "แก้ไข",        "ปรับปรุง" },
-            new[] { "ลบออก",        "ขจัด" },
-            new[] { "เพิ่ม",        "เพิ่มเติม" },
-            new[] { "ลดทอน",        "ลดลง" },
-            new[] { "เปลี่ยน",      "เปลี่ยนแปลง" },
-            new[] { "ยืนยัน",       "รับรอง" },
-            new[] { "ปฏิเสธ",       "ไม่ยอมรับ" },
-            new[] { "อนุมัติ",      "เห็นชอบ" },
-            new[] { "ตรวจสอบ",      "พิจารณา" },
-            new[] { "รายงาน",       "แจ้งรายงาน" },
-            new[] { "ประชุม",       "ประชุมหารือ" },
-            new[] { "ตัดสิน",       "วินิจฉัย" },
-            new[] { "เลือก",        "คัดเลือก" },
-            new[] { "จัดเตรียม",    "จัดการ" },
-            new[] { "ควบคุม",       "กำกับดูแล" },
-            new[] { "พัฒนา",        "ปรับพัฒนา" },
-            new[] { "วางแผน",       "กำหนดแผน" },
-            new[] { "ดำเนิน",       "ดำเนินการ" },
-            new[] { "ปรึกษา",       "หารือ" },
-            new[] { "สรุป",         "สรุปผล" },
-            new[] { "นำเสนอ",       "นำออกเสนอ" },
-            new[] { "อธิบาย",       "ชี้แจง" },
-            new[] { "แสดง",         "แสดงให้เห็น" },
-            new[] { "ระบุ",         "ชี้บ่ง" },
-            new[] { "กำหนด",        "ตั้งกำหนด" },
-            new[] { "สนับสนุน",     "ให้การสนับสนุน" },
-            new[] { "คัดค้าน",      "โต้แย้ง" },
-            new[] { "เสนอ",         "ยื่นข้อเสนอ" },
-            new[] { "ขออนุญาต",     "ร้องขอ" },
-            new[] { "ขอบคุณ",       "ขอบพระคุณ" },
-            new[] { "ขอโทษ",        "ขอประทานโทษ" },
-            new[] { "ยินดี",        "มีความยินดี" },
-            new[] { "เห็นด้วย",     "เห็นพ้อง" },
-            new[] { "ไม่เห็นด้วย",  "ขัดแย้ง" },
-            new[] { "รอคอย",        "คอยท่า" },
-            new[] { "รีบ",          "รีบด่วน" },
-            new[] { "สำเร็จ",       "บรรลุผล" },
-            new[] { "ล้มเหลว",      "ไม่สำเร็จ" },
-            new[] { "ยาก",          "ลำบาก" },
-            new[] { "ง่าย",         "สะดวก" },
-            new[] { "ดีมาก",        "เป็นประโยชน์" },
-            new[] { "เลว",          "ไม่ดี" },
-            new[] { "สำคัญ",        "มีความสำคัญ" },
-            new[] { "จำเป็น",       "มีความจำเป็น" },
-        };
-
-        public static string SynonymEmbed(string coverText, string cipherText, IList<int> activeGroupIndices)
-        {
-            if (activeGroupIndices == null || activeGroupIndices.Count == 0)
-                throw new InvalidOperationException("กรุณาเลือกกลุ่มคำพ้องอย่างน้อย 1 กลุ่ม");
-
-            bool[] bits = StringToPayloadBits(cipherText);
-            var candidates = FindSynonymCandidates(coverText, activeGroupIndices);
-
-            if (candidates.Count < bits.Length)
-                throw new InvalidOperationException(
-                    $"Covertext มีคำพ้องไม่เพียงพอ (ต้องการ {bits.Length} คำ แต่พบ {candidates.Count})");
-
-            var sb = new StringBuilder(coverText);
-            int offset = 0;
-            int bitIdx = 0;
-
-            foreach (var (pos, groupIdx, wordVariantIdx, word) in candidates)
-            {
-                if (bitIdx >= bits.Length) break;
-
-                bool wantBit1 = bits[bitIdx];
-                string target = SynonymGroups[groupIdx][wantBit1 ? 1 : 0];
-
-                int adjustedPos = pos + offset;
-                sb.Remove(adjustedPos, word.Length);
-                sb.Insert(adjustedPos, target);
-                offset += target.Length - word.Length;
-                bitIdx++;
-            }
-
-            if (bitIdx < bits.Length)
-                throw new InvalidOperationException(
-                    $"Covertext มีคำพ้องไม่เพียงพอ (ต้องการ {bits.Length} แต่ได้ {bitIdx})");
-
-            return sb.ToString();
-        }
-
-        public static string SynonymExtract(string steganotext, IList<int> activeGroupIndices)
-        {
-            if (activeGroupIndices == null || activeGroupIndices.Count == 0)
-                throw new InvalidOperationException("กรุณาเลือกกลุ่มคำพ้องอย่างน้อย 1 กลุ่ม");
-
-            var candidates = FindSynonymCandidates(steganotext, activeGroupIndices);
-            var extractedBits = new List<bool>();
-
-            foreach (var (_, _, wordVariantIdx, _) in candidates)
-                extractedBits.Add(wordVariantIdx == 1);
-
-            return PayloadBitsToString(extractedBits.ToArray());
-        }
-
-        // ============================================================
         //  UTILITY: Payload Bits Encoding/Decoding
-        //  [H1 FIX] เพิ่ม CRC-16 ใน payload header
-        //  [H2 FIX] ลด max length จาก 1M เป็น 100K
-        //
-        //  Format: [32-bit length (big-endian)][16-bit CRC-16][data bits]
         // ============================================================
 
+        /// <summary>
+        /// แปลง string (ciphertext) → payload bits
+        /// รูปแบบ: [32-bit length (big-endian)][bits ของแต่ละ byte ของ UTF8 string]
+        /// </summary>
         public static bool[] StringToPayloadBits(string text)
         {
             byte[] data = Encoding.UTF8.GetBytes(text);
-            ushort crc = ComputeCrc16(data);
-            int totalBits = 32 + 16 + data.Length * 8; // +16 for CRC
-
+            int totalBits = 32 + data.Length * 8;
             bool[] bits = new bool[totalBits];
 
-            // Length header (32 bits, big-endian)
+            // เขียน length header (32 bits, big-endian)
             int len = data.Length;
             for (int i = 0; i < 32; i++)
                 bits[i] = ((len >> (31 - i)) & 1) == 1;
 
-            // CRC-16 (16 bits, big-endian)
-            for (int i = 0; i < 16; i++)
-                bits[32 + i] = ((crc >> (15 - i)) & 1) == 1;
-
-            // Data bits
+            // เขียน data bits
             for (int b = 0; b < data.Length; b++)
                 for (int bit = 0; bit < 8; bit++)
-                    bits[48 + b * 8 + bit] = ((data[b] >> (7 - bit)) & 1) == 1;
+                    bits[32 + b * 8 + bit] = ((data[b] >> (7 - bit)) & 1) == 1;
 
             return bits;
         }
 
+        /// <summary>
+        /// แปลง payload bits → string (ciphertext)
+        /// อ่าน 32-bit length header ก่อน แล้วอ่าน data bytes
+        /// </summary>
         public static string PayloadBitsToString(bool[] bits)
         {
-            if (bits.Length < 48)
-                throw new InvalidOperationException("Steganotext มีข้อมูลไม่เพียงพอ (น้อยกว่า 48 bits)");
+            if (bits.Length < 32)
+                throw new InvalidOperationException("Steganotext มีข้อมูลไม่เพียงพอ (น้อยกว่า 32 bits)");
 
             // อ่าน length header
             int len = 0;
             for (int i = 0; i < 32; i++)
                 len = (len << 1) | (bits[i] ? 1 : 0);
 
-            // [H2] ลด max จาก 1M → 100K
-            if (len <= 0 || len > 100_000)
+            if (len <= 0 || len > 1_000_000)
                 throw new InvalidOperationException("ไม่พบข้อมูลที่ซ่อนอยู่ หรือเลือกเทคนิคผิด");
 
-            // อ่าน CRC-16
-            ushort storedCrc = 0;
-            for (int i = 0; i < 16; i++)
-                storedCrc = (ushort)((storedCrc << 1) | (bits[32 + i] ? 1 : 0));
-
-            int requiredBits = 48 + len * 8;
+            int requiredBits = 32 + len * 8;
             if (bits.Length < requiredBits)
                 throw new InvalidOperationException(
                     $"Steganotext มีข้อมูลไม่ครบ (ต้องการ {requiredBits} bits แต่ได้ {bits.Length})");
@@ -532,32 +375,11 @@ namespace Steganography
             {
                 byte val = 0;
                 for (int bit = 0; bit < 8; bit++)
-                    val = (byte)((val << 1) | (bits[48 + b * 8 + bit] ? 1 : 0));
+                    val = (byte)((val << 1) | (bits[32 + b * 8 + bit] ? 1 : 0));
                 data[b] = val;
             }
 
-            // [H1] ตรวจ CRC-16
-            ushort computedCrc = ComputeCrc16(data);
-            if (storedCrc != computedCrc)
-                throw new InvalidOperationException(
-                    "ข้อมูลที่ซ่อนไว้เสียหาย หรือเลือกเทคนิค/คู่ผิด (CRC ไม่ตรง)");
-
             return Encoding.UTF8.GetString(data);
-        }
-
-        /// <summary>
-        /// CRC-16/CCITT-FALSE
-        /// </summary>
-        private static ushort ComputeCrc16(byte[] data)
-        {
-            ushort crc = 0xFFFF;
-            foreach (byte b in data)
-            {
-                crc ^= (ushort)(b << 8);
-                for (int i = 0; i < 8; i++)
-                    crc = (ushort)((crc & 0x8000) != 0 ? (crc << 1) ^ 0x1021 : crc << 1);
-            }
-            return crc;
         }
 
         // ============================================================
@@ -565,38 +387,15 @@ namespace Steganography
         // ============================================================
 
         /// <summary>
-        /// [M3 FIX] ตรวจว่า match ที่ตำแหน่ง pos เป็น substring ของคำที่ยาวกว่าใน MisspellingPairs หรือไม่
-        /// ป้องกัน: "ราชการ" match ภายใน "ข้าราชการ"
+        /// ค้นหาตำแหน่งของคำ Correct/Wrong ทั้งหมดใน text ตามลำดับที่ปรากฏ
+        /// Returns: List of (position, pairIndex, isCorrect, matchedWord)
         /// </summary>
-        private static bool IsMisspellingSubstringOfLongerPair(string text, int pos, string matchedWord)
-        {
-            for (int idx = 0; idx < MisspellingPairs.Length; idx++)
-            {
-                var pair = MisspellingPairs[idx];
-                foreach (var longerWord in new[] { pair.Correct, pair.Wrong })
-                {
-                    if (longerWord.Length <= matchedWord.Length) continue;
-
-                    // หา matchedWord ใน longerWord
-                    int subIdx = longerWord.IndexOf(matchedWord, StringComparison.Ordinal);
-                    while (subIdx >= 0)
-                    {
-                        // ตรวจว่า longerWord ปรากฏจริงใน text ที่ตำแหน่งครอบคลุม pos
-                        int textStart = pos - subIdx;
-                        if (textStart >= 0 && textStart + longerWord.Length <= text.Length &&
-                            string.Compare(text, textStart, longerWord, 0, longerWord.Length, StringComparison.Ordinal) == 0)
-                            return true;
-
-                        subIdx = longerWord.IndexOf(matchedWord, subIdx + 1, StringComparison.Ordinal);
-                    }
-                }
-            }
-            return false;
-        }
-
         private static List<(int pos, int pairIdx, bool isCorrect, string word)>
             FindMisspellingCandidates(string text, IList<int> activePairIndices)
         {
+            // รวบรวม (word, pairIdx, isCorrect) ทั้งหมด
+            // เรียงตามตำแหน่งที่พบใน text
+
             var results = new List<(int pos, int pairIdx, bool isCorrect, string word)>();
             int searchFrom = 0;
 
@@ -626,13 +425,6 @@ namespace Steganography
 
                 if (bestPos < 0) break;
 
-                // [M3] ข้ามถ้าเป็น substring ของคำที่ยาวกว่าใน MisspellingPairs
-                if (IsMisspellingSubstringOfLongerPair(text, bestPos, bestWord))
-                {
-                    searchFrom = bestPos + bestWord.Length;
-                    continue;
-                }
-
                 results.Add((bestPos, bestPairIdx, bestIsCorrect, bestWord));
                 searchFrom = bestPos + bestWord.Length;
             }
@@ -640,37 +432,220 @@ namespace Steganography
             return results;
         }
 
+        // ============================================================
+        //  SYNONYM
+        // ============================================================
+
         /// <summary>
-        /// [M4 FIX] ตรวจว่าตัวอักษรเป็น Thai character (พยัญชนะ, สระ, วรรณยุกต์, ตัวเลข)
+        /// กลุ่มคำพ้องภาษาไทย (Synonym Groups)
+        /// แต่ละกลุ่มมีคำหลาย 2 คำขึ้นไปที่ความหมายใกล้เคียงกัน
+        ///
+        /// หลักการเข้ารหัส:
+        ///   - แต่ละกลุ่มที่ผู้ใช้เลือกจะให้ 1 bit
+        ///   - คำที่ index 0 ในกลุ่ม = bit 0
+        ///   - คำที่ index 1 ในกลุ่ม = bit 1
+        ///   (ขยายได้เป็น n-ary encoding แต่ตอนนี้ใช้ binary)
+        ///
+        /// ลำดับ index ต้องตรงกับ checkedListBox1.Items ใน Synonym.Designer.cs
         /// </summary>
-        private static bool IsThaiChar(char c)
+        public static readonly string[][] SynonymGroups = new[]
         {
-            return c >= '\u0E01' && c <= '\u0E5B';
+            // index 0
+            new[] { "กล่าว",        "พูด" },
+            // index 1
+            new[] { "ได้รับ",       "ได้มา" },
+            // index 2
+            new[] { "ทำ",           "กระทำ" },
+            // index 3
+            new[] { "ใช้",          "นำมาใช้" },
+            // index 4
+            new[] { "มอง",          "เฝ้ามอง" },
+            // index 5
+            new[] { "เดิน",         "ย่าง" },
+            // index 6
+            new[] { "คิด",          "ไตร่ตรอง" },
+            // index 7
+            new[] { "หยุด",         "หยุดชะงัก" },
+            // index 8
+            new[] { "ต้องการ",      "ประสงค์" },
+            // index 9
+            new[] { "เริ่ม",        "เริ่มต้น" },
+            // index 10
+            new[] { "เสร็จ",        "เสร็จสิ้น" },
+            // index 11
+            new[] { "ช่วย",         "ให้ความช่วยเหลือ" },
+            // index 12
+            new[] { "บอก",          "แจ้ง" },
+            // index 13
+            new[] { "ถาม",          "สอบถาม" },
+            // index 14
+            new[] { "ตอบ",          "ตอบรับ" },
+            // index 15
+            new[] { "รู้จัก",        "ทราบ" },
+            // index 16
+            new[] { "เข้าใจ",       "ตระหนัก" },
+            // index 17
+            new[] { "ส่ง",          "จัดส่ง" },
+            // index 18
+            new[] { "รับทราบ",      "รับมอบ" },
+            // index 19
+            new[] { "สร้าง",        "ก่อสร้าง" },
+            // index 20
+            new[] { "แก้ไข",        "ปรับปรุง" },
+            // index 21
+            new[] { "ลบออก",        "ขจัด" },
+            // index 22
+            new[] { "เพิ่ม",        "เพิ่มเติม" },
+            // index 23
+            new[] { "ลดทอน",        "ลดลง" },
+            // index 24
+            new[] { "เปลี่ยน",      "เปลี่ยนแปลง" },
+            // index 25
+            new[] { "ยืนยัน",       "รับรอง" },
+            // index 26
+            new[] { "ปฏิเสธ",       "ไม่ยอมรับ" },
+            // index 27
+            new[] { "อนุมัติ",      "เห็นชอบ" },
+            // index 28
+            new[] { "ตรวจสอบ",      "พิจารณา" },
+            // index 29
+            new[] { "รายงาน",       "แจ้งรายงาน" },
+            // index 30
+            new[] { "ประชุม",       "ประชุมหารือ" },
+            // index 31
+            new[] { "ตัดสิน",       "วินิจฉัย" },
+            // index 32
+            new[] { "เลือก",        "คัดเลือก" },
+            // index 33
+            new[] { "จัดเตรียม",    "จัดการ" },
+            // index 34
+            new[] { "ควบคุม",       "กำกับดูแล" },
+            // index 35
+            new[] { "พัฒนา",        "ปรับพัฒนา" },
+            // index 36
+            new[] { "วางแผน",       "กำหนดแผน" },
+            // index 37
+            new[] { "ดำเนิน",       "ดำเนินการ" },
+            // index 38
+            new[] { "ปรึกษา",       "หารือ" },
+            // index 39
+            new[] { "สรุป",         "สรุปผล" },
+            // index 40
+            new[] { "นำเสนอ",       "นำออกเสนอ" },
+            // index 41
+            new[] { "อธิบาย",       "ชี้แจง" },
+            // index 42
+            new[] { "แสดง",         "แสดงให้เห็น" },
+            // index 43
+            new[] { "ระบุ",         "ชี้บ่ง" },
+            // index 44
+            new[] { "กำหนด",        "ตั้งกำหนด" },
+            // index 45
+            new[] { "สนับสนุน",     "ให้การสนับสนุน" },
+            // index 46
+            new[] { "คัดค้าน",      "โต้แย้ง" },
+            // index 47
+            new[] { "เสนอ",         "ยื่นข้อเสนอ" },
+            // index 48
+            new[] { "ขออนุญาต",     "ร้องขอ" },
+            // index 49
+            new[] { "ขอบคุณ",       "ขอบพระคุณ" },
+            // index 50
+            new[] { "ขอโทษ",        "ขอประทานโทษ" },
+            // index 51
+            new[] { "ยินดี",        "มีความยินดี" },
+            // index 52
+            new[] { "เห็นด้วย",     "เห็นพ้อง" },
+            // index 53
+            new[] { "ไม่เห็นด้วย",  "ขัดแย้ง" },
+            // index 54
+            new[] { "รอคอย",        "คอยท่า" },
+            // index 55
+            new[] { "รีบ",          "รีบด่วน" },
+            // index 56
+            new[] { "สำเร็จ",       "บรรลุผล" },
+            // index 57
+            new[] { "ล้มเหลว",      "ไม่สำเร็จ" },
+            // index 58
+            new[] { "ยาก",          "ลำบาก" },
+            // index 59
+            new[] { "ง่าย",         "สะดวก" },
+            // index 60
+            new[] { "ดีมาก",        "เป็นประโยชน์" },
+            // index 61
+            new[] { "เลว",          "ไม่ดี" },
+            // index 62
+            new[] { "สำคัญ",        "มีความสำคัญ" },
+            // index 63
+            new[] { "จำเป็น",       "มีความจำเป็น" },
+        };
+
+        /// <summary>
+        /// ฝัง ciphertext ลงใน covertext ด้วยเทคนิค Synonym
+        /// แทนคำในกลุ่มที่เลือก: index 0 ในกลุ่ม = bit 0, index 1 = bit 1
+        /// </summary>
+        /// <param name="coverText">ข้อความปกปิด (ต้องมีคำจากกลุ่มที่เลือกเพียงพอ)</param>
+        /// <param name="cipherText">Base64 ciphertext ที่จะฝัง</param>
+        /// <param name="activeGroupIndices">index ของกลุ่มคำพ้องที่ผู้ใช้เลือก</param>
+        public static string SynonymEmbed(string coverText, string cipherText, IList<int> activeGroupIndices)
+        {
+            if (activeGroupIndices == null || activeGroupIndices.Count == 0)
+                throw new InvalidOperationException("กรุณาเลือกกลุ่มคำพ้องอย่างน้อย 1 กลุ่ม");
+
+            bool[] bits = StringToPayloadBits(cipherText);
+            var candidates = FindSynonymCandidates(coverText, activeGroupIndices);
+
+            if (candidates.Count < bits.Length)
+                throw new InvalidOperationException(
+                    $"Covertext มีคำพ้องไม่เพียงพอ (ต้องการ {bits.Length} คำ แต่พบ {candidates.Count})");
+
+            var sb = new StringBuilder(coverText);
+            int offset = 0;
+            int bitIdx = 0;
+
+            foreach (var (pos, groupIdx, wordVariantIdx, word) in candidates)
+            {
+                if (bitIdx >= bits.Length) break;
+
+                bool wantBit1 = bits[bitIdx];
+                // bit 0 → ใช้ variant 0, bit 1 → ใช้ variant 1
+                string target = SynonymGroups[groupIdx][wantBit1 ? 1 : 0];
+
+                int adjustedPos = pos + offset;
+                sb.Remove(adjustedPos, word.Length);
+                sb.Insert(adjustedPos, target);
+                offset += target.Length - word.Length;
+                bitIdx++;
+            }
+
+            if (bitIdx < bits.Length)
+                throw new InvalidOperationException(
+                    $"Covertext มีคำพ้องไม่เพียงพอ (ต้องการ {bits.Length} แต่ได้ {bitIdx})");
+
+            return sb.ToString();
         }
 
         /// <summary>
-        /// [M4 FIX] ตรวจ word boundary สำหรับคำสั้น
-        /// คำสั้น (≤ 3 chars) ที่ถูกขนาบด้วย Thai chars ทั้งซ้ายขวา → น่าจะเป็น substring ของ compound word
-        /// เช่น "ทำ" ใน "ทำงาน" → ซ้ายไม่มี, ขวามี "ง" → ข้าม
+        /// ดึง ciphertext จาก steganotext ด้วยเทคนิค Synonym
         /// </summary>
-        private static bool IsSynonymLikelyCompoundSubstring(string text, int pos, string word)
+        public static string SynonymExtract(string steganotext, IList<int> activeGroupIndices)
         {
-            // เฉพาะคำสั้นเท่านั้นที่ต้องตรวจ (คำยาวมักจะ match ถูกต้อง)
-            if (word.Length > 3) return false;
+            if (activeGroupIndices == null || activeGroupIndices.Count == 0)
+                throw new InvalidOperationException("กรุณาเลือกกลุ่มคำพ้องอย่างน้อย 1 กลุ่ม");
 
-            int endPos = pos + word.Length;
+            var candidates = FindSynonymCandidates(steganotext, activeGroupIndices);
+            var extractedBits = new List<bool>();
 
-            // ตรวจว่ามี Thai char ต่อท้ายทันที → น่าจะเป็นส่วนหนึ่งของคำรวม
-            if (endPos < text.Length && IsThaiChar(text[endPos]))
-                return true;
+            foreach (var (_, _, wordVariantIdx, _) in candidates)
+                extractedBits.Add(wordVariantIdx == 1); // variant 0 = bit 0, variant 1 = bit 1
 
-            // ตรวจว่ามี Thai char นำหน้าทันที (ไม่ใช่ space/เครื่องหมาย/ขึ้นบรรทัดใหม่)
-            if (pos > 0 && IsThaiChar(text[pos - 1]))
-                return true;
-
-            return false;
+            return PayloadBitsToString(extractedBits.ToArray());
         }
 
+        /// <summary>
+        /// ค้นหาตำแหน่งคำทุกคำจากกลุ่มพ้องที่เลือก เรียงตามตำแหน่งใน text
+        /// Returns: (pos, groupIdx, variantIdx, matchedWord)
+        /// </summary>
         private static List<(int pos, int groupIdx, int variantIdx, string word)>
             FindSynonymCandidates(string text, IList<int> activeGroupIndices)
         {
@@ -701,13 +676,6 @@ namespace Steganography
                 }
 
                 if (bestPos < 0) break;
-
-                // [M4] ข้ามคำสั้นที่น่าจะเป็น substring ของ compound word
-                if (IsSynonymLikelyCompoundSubstring(text, bestPos, bestWord))
-                {
-                    searchFrom = bestPos + bestWord.Length;
-                    continue;
-                }
 
                 results.Add((bestPos, bestGroupIdx, bestVariantIdx, bestWord));
                 searchFrom = bestPos + bestWord.Length;

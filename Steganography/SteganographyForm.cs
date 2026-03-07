@@ -43,19 +43,6 @@ namespace Steganography
                     LoadFileIntoTextBox(files[0], InputPlaintext, namefile);
             };
 
-            // Drag & Drop — InputCovertext (Encryption tab)
-            InputCovertext.AllowDrop = true;
-            InputCovertext.DragEnter += (s, ev) =>
-                ev.Effect = ev.Data.GetDataPresent(DataFormats.FileDrop)
-                    ? DragDropEffects.Copy
-                    : DragDropEffects.None;
-            InputCovertext.DragDrop += (s, ev) =>
-            {
-                var files = (string[])ev.Data.GetData(DataFormats.FileDrop);
-                if (files != null && files.Length > 0)
-                    LoadFileIntoTextBox(files[0], InputCovertext, null);
-            };
-
             // Drag & Drop — InputChipertext (Decryption tab)
             InputChipertext.AllowDrop = true;
             InputChipertext.DragEnter += (s, ev) =>
@@ -282,25 +269,6 @@ namespace Steganography
             }
         }
 
-        private void BtNb_Click(object sender, EventArgs e)
-        {
-            // NBSP Embed
-            if (!ValidateSteganographyInput()) return;
-
-            var form = new NbspForm
-            {
-                IsEmbedMode = true,
-                CipherText  = textBox1.Text.Trim(),
-                CoverText   = GetCovertext()
-            };
-
-            if (form.ShowDialog() == DialogResult.OK)
-            {
-                TbStegano.Text = form.ResultText;
-                tsslLabel.Text = "NBSP Embed สำเร็จ  |  Steganotext: " + form.ResultText.Length + " chars";
-            }
-        }
-
         private void BtSnn_Click(object sender, EventArgs e)
         {
             // Synonym Embed
@@ -396,11 +364,8 @@ namespace Steganography
                 bool[] bits    = SteganographyEngine.StringToPayloadBits(cipherText);
                 int needed     = bits.Length;
                 int zwspSlots  = Math.Max(0, coverText.Length - 1);
-                int nbspSlots  = 0;
-                foreach (char c in coverText)
-                    if (c == ' ' || c == '\u00A0') nbspSlots++;
-                tsslLabel.Text = $"ต้องการ {needed} bits  |  ZWSP: {zwspSlots}  NBSP: {nbspSlots}" +
-                                 (zwspSlots >= needed ? "  ✓" : "  ✗ (Covertext สั้นเกินไป)");
+                tsslLabel.Text = $"ต้องการ {needed} bits  |  ZWSP รองรับ {zwspSlots} bits" +
+                                 (zwspSlots >= needed ? "  ✓" : "  ✗ (Covertext สั้นเกินไปสำหรับ ZWSP)");
             }
             catch { }
         }
@@ -467,21 +432,6 @@ namespace Steganography
                 IsEmbedMode      = false,
                 SteganotextInput = InputChipertext.Text
             };
-            if (form.ShowDialog() == DialogResult.OK)
-                TriggerDecryption(form.ResultText);
-        }
-
-        private void BtNbD_Click(object sender, EventArgs e)
-        {
-            // NBSP Extract
-            if (!ValidateDecryptionInput()) return;
-
-            var form = new NbspForm
-            {
-                IsEmbedMode      = false,
-                SteganotextInput = InputChipertext.Text
-            };
-
             if (form.ShowDialog() == DialogResult.OK)
                 TriggerDecryption(form.ResultText);
         }
@@ -644,7 +594,7 @@ namespace Steganography
                 "   • กด Encryption → ได้ Ciphertext\n\n" +
                 "2. [แท็บ Steganography]\n" +
                 "   • Ciphertext จะ sync มาอัตโนมัติ\n" +
-                "   • เลือกเทคนิค: Homoglyph / Misspelling / Space / NBSP / Synonym\n" +
+                "   • เลือกเทคนิค: Homoglyph / Misspelling / Space / Synonym\n" +
                 "   • เลือก options ใน dialog แล้วกด ตกลง\n" +
                 "   • ได้ Steganotext → กด Save บันทึก\n\n" +
                 "─── ขั้นตอนถอดข้อความ ───\n" +
@@ -665,7 +615,7 @@ namespace Steganography
                 "เทคนิค Steganography ที่รองรับ\n\n" +
                 "1. Homoglyph\n" +
                 "   แทนตัวอักษรไทยที่หน้าตาคล้ายกัน\n" +
-                "   ฎ↔ฏ  ข↔ฃ  ช↔ซ\n" +
+                "   ฎ↔ฏ  เ↔แ  ด↔ต  ข↔ฃ  ช↔ซ\n" +
                 "   ข้อจำกัด: Covertext ต้องมีตัวอักษรที่เลือกเพียงพอ\n\n" +
                 "2. Misspelling\n" +
                 "   แทนคำด้วยการสะกดผิดที่กำหนดไว้ล่วงหน้า\n" +
@@ -675,15 +625,11 @@ namespace Steganography
                 "   แทรก U+200B ระหว่างตัวอักษร\n" +
                 "   มี ZWSP = bit 1 / ไม่มี = bit 0\n" +
                 "   ความจุ = จำนวนตัวอักษรใน Covertext - 1\n\n" +
-                "4. Non-Breaking Space (NBSP)\n" +
-                "   แทนที่ space ปกติ (U+0020) ด้วย NBSP (U+00A0)\n" +
-                "   NBSP = bit 1 / space ปกติ = bit 0\n" +
-                "   ความจุ = จำนวน space ใน Covertext\n\n" +
-                "5. Synonym\n" +
+                "4. Synonym\n" +
                 "   สลับคำพ้องความหมายในกลุ่มที่เลือก\n" +
                 "   คำแรกในกลุ่ม = bit 0 / คำที่สองในกลุ่ม = bit 1\n" +
                 "   มีกลุ่มคำพ้องให้เลือก 64 กลุ่ม\n\n" +
-                "Payload format: [32-bit length][16-bit CRC][data bits] (UTF-8, MSB first)",
+                "Payload format: [32-bit length][data bits] (UTF-8, MSB first)",
                 "ข้อมูล Steganography",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information
@@ -698,7 +644,7 @@ namespace Steganography
                 "• .pdf / .doc / .docx — อ่านได้เฉพาะ plain text เท่านั้น\n\n" +
                 "Steganotext ที่บันทึกจะเป็น .txt (UTF-8)\n" +
                 "ห้ามเปิดไฟล์ด้วย editor ที่ strip invisible characters\n" +
-                "เพราะจะลบ ZWSP (U+200B) หรือ normalize NBSP (U+00A0) เป็น space ปกติ",
+                "เพราะจะลบ ZWSP ออก (สำหรับเทคนิค Space)",
                 "รูปแบบไฟล์",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information
@@ -711,14 +657,10 @@ namespace Steganography
                 "คำเตือนด้านความปลอดภัย\n\n" +
                 "โปรแกรมนี้จัดทำขึ้นเพื่อการศึกษาเท่านั้น\n" +
                 "ไม่ควรใช้กับข้อมูลลับหรือข้อมูลสำคัญจริง\n\n" +
-                "คุณสมบัติ:\n" +
-                "• AES-256-CBC + Salt สุ่มใหม่ทุกครั้ง\n" +
-                "• HMAC-SHA256 ป้องกันการดัดแปลง\n" +
-                "• CRC-16 ตรวจสอบ payload integrity\n\n" +
-                "ข้อจำกัด:\n" +
+                "ข้อจำกัดที่ควรทราบ:\n" +
+                "• AES Salt คงที่ (ลด security เล็กน้อย)\n" +
                 "• Homoglyph/Misspelling ตรวจจับได้ด้วยสายตา\n" +
-                "• ZWSP/NBSP ตรวจจับได้ด้วย text analyzer\n" +
-                "• PBKDF2 ควรใช้ 100,000+ รอบสำหรับงานจริง\n\n" +
+                "• ZWSP ตรวจจับได้ด้วย text analyzer\n\n" +
                 "ผู้พัฒนาไม่รับผิดชอบต่อความเสียหายใดๆ",
                 "Security Warning",
                 MessageBoxButtons.OK,

@@ -26,12 +26,10 @@ Steganography/
 ├── SteganographyEngine.cs        # คลาสกลาง: Embed/Extract ทุกเทคนิค + payload encoding
 ├── OptionStaganogryphy.cs        # Sub-form: Homoglyph (ฎ/ฏ, ข/ฃ, ช/ซ)
 ├── OptionStaganogryphy.Designer.cs
-├── Misspelling.cs                # Sub-form: Misspelling (64 คู่คำภาษาไทย)
+├── Misspelling.cs                # Sub-form: Misspelling (65 คู่คำภาษาไทย)
 ├── Misspelling.Designer.cs
 ├── Space.cs                      # Sub-form: Zero-Width Space (U+200B)
 ├── Space.Designer.cs
-├── Nbsp.cs                       # Sub-form: Non-Breaking Space (U+00A0)
-├── Nbsp.Designer.cs
 ├── Synonym.cs                    # Sub-form: Synonym (64 กลุ่มคำพ้อง)
 ├── Synonym.Designer.cs
 ├── Steganography.csproj          # MSBuild project (include ทุกไฟล์แล้ว)
@@ -50,12 +48,12 @@ Steganography/
 ```
 [Tab: Encryption]
   Plaintext + Key
-    → AesEncrypt(plaintext, key)           [salt สุ่ม 16 bytes]
+    → AesEncrypt(plaintext, key)           [salt คงที่ "Stegano2025Educa"]
     → Base64 Ciphertext → InputPayload + sync ไปที่ textBox1 อัตโนมัติ
 
 [Tab: Steganography]
   textBox1 (Ciphertext) + InputCovertext (Covertext จาก Encryption tab)
-    → เลือกเทคนิค (BtHm / BtMs / BtSp / BtNb / BtSnn)
+    → เลือกเทคนิค (BtHm / BtMs / BtSp)
     → เปิด sub-form → ผู้ใช้เลือก options → กด ตกลง
     → SteganographyEngine.Xxx Embed(coverText, cipherText, options)
     → TbStegano (Steganotext)  → Save / Copy
@@ -66,7 +64,7 @@ Steganography/
 ```
 [Tab: Decryption]
   InputChipertext (Steganotext) + InputkeyDecry (Key)
-    → เลือกเทคนิค (BtHmD / BtMsD / BtSpD / BtNbD / BtSnnD)
+    → เลือกเทคนิค (BtHmD / BtMsD / BtSpD)
     → เปิด sub-form → เลือก options เดิม → กด ตกลง
     → SteganographyEngine.Xxx Extract(steganotext, options)
     → Base64 Ciphertext
@@ -81,13 +79,12 @@ Steganography/
 ### 4.1 Payload Format (ใช้กับทุกเทคนิค)
 
 ```
-[32-bit length header (big-endian)] [16-bit CRC-16] [data bits]
+[32-bit length header (big-endian)] [data bits]
 ```
 
-- **Length**: จำนวน bytes ของ UTF-8 encoded ciphertext string
-- **CRC-16**: CCITT-FALSE checksum สำหรับตรวจสอบ integrity
-- **Data bits**: แต่ละ byte → 8 bits, MSB first
-- ตัวอย่าง: ciphertext = "ABC" (3 bytes) → 32 + 16 + 24 = 72 bits ทั้งหมด
+- **Length**: จำนวน bytes ของ UTF-8 encoded ciphertext string  
+- **Data bits**: แต่ละ byte → 8 bits, MSB first  
+- ตัวอย่าง: ciphertext = "ABC" (3 bytes) → 32 + 24 = 56 bits ทั้งหมด  
 
 ```csharp
 bool[] bits = SteganographyEngine.StringToPayloadBits(cipherText);
@@ -108,12 +105,11 @@ string result = SteganographyEngine.PayloadBitsToString(extractedBits);
 2: ช → ซ   (ChkbxChoChang)
 ```
 
-[M1+M2 FIX] ลบคู่ เ↔แ และ ด↔ต ที่เปลี่ยนความหมาย คงเหลือ 3 คู่
 ก่อน embed จะ normalize glyph กลับเป็น original ก่อน เพื่อป้องกัน double-encoding
 
 ### 4.3 Misspelling Technique
 
-- **64 คู่คำ** ใน `SteganographyEngine.MisspellingPairs`
+- **65 คู่คำ** ใน `SteganographyEngine.MisspellingPairs`
 - คำ**ถูก** = bit 0, คำ**ผิด** = bit 1
 - ค้นหาแบบ greedy left-to-right, non-overlapping (`StringComparison.Ordinal`)
 - ลำดับ index ต้องตรงกับ `checkedListBox1.Items` ใน Misspelling.Designer.cs
@@ -125,15 +121,7 @@ string result = SteganographyEngine.PayloadBitsToString(extractedBits);
 - ความจุ = `coverText.Length - 1` bits
 - **ข้อดี**: ไม่ต้องเลือก options ใดๆ ใช้ได้กับทุก covertext
 
-### 4.5 NBSP Technique
-
-- ใช้ `U+00A0` (Non-Breaking Space) แทนที่ space ปกติ `U+0020` ใน covertext
-- space ปกติ = bit 0, NBSP = bit 1
-- ความจุ = จำนวน space ใน covertext
-- **ข้อดี**: ไม่ต้องเลือก options ใดๆ มองไม่เห็นด้วยตาเปล่า
-- **ข้อเสีย**: ความจุต่ำกว่า ZWSP (ขึ้นกับจำนวน space)
-
-### 4.6 Synonym Technique
+### 4.5 Synonym Technique
 
 - **64 กลุ่มคำพ้อง** ใน `SteganographyEngine.SynonymGroups`
 - คำ index 0 ในกลุ่ม = bit 0, คำ index 1 = bit 1
@@ -148,17 +136,15 @@ string result = SteganographyEngine.PayloadBitsToString(extractedBits);
 
 **Algorithm**: AES-256-CBC  
 **Key Derivation**: PBKDF2 (`Rfc2898DeriveBytes`), 10,000 iterations  
-**Salt**: สุ่มใหม่ 16 bytes ทุกครั้ง (RandomNumberGenerator)
-**HMAC**: HMAC-SHA256 Encrypt-then-MAC
-**Output**: `Base64( salt[16] + cipherBytes[N] + hmac[32] )`
+**Salt**: คงที่ 16 bytes = `"Stegano2025Educa"`
 
 ```csharp
-// Salt สุ่มใหม่ทุกครั้ง
-byte[] salt = new byte[16];
-RandomNumberGenerator.Create().GetBytes(salt);
-// Key = PBKDF2(password, salt, 10000).GetBytes(32)
+private static readonly byte[] AesSalt = {
+    0x53,0x74,0x65,0x67,0x61,0x6E,0x6F,0x32,
+    0x30,0x32,0x35,0x45,0x64,0x75,0x63,0x61
+};
+// Key = PBKDF2(password, AesSalt, 10000).GetBytes(32)
 // IV  = ต่อเนื่องจาก Key → .GetBytes(16)
-// HmacKey = ต่อเนื่อง → .GetBytes(32)
 ```
 
 ---
@@ -212,7 +198,6 @@ if (form.ShowDialog() == DialogResult.OK)
 | Homoglyph Embed/Extract | ✅ สมบูรณ์ |
 | Misspelling Embed/Extract | ✅ สมบูรณ์ |
 | ZWSP Embed/Extract | ✅ สมบูรณ์ |
-| NBSP Embed/Extract | ✅ สมบูรณ์ |
 | Synonym Embed/Extract | ✅ สมบูรณ์ (64 กลุ่มคำพ้อง) |
 | Drag & Drop (InputPlaintext + InputChipertext) | ✅ สมบูรณ์ |
 | Sync Ciphertext อัตโนมัติ | ✅ สมบูรณ์ |
@@ -227,7 +212,7 @@ if (form.ShowDialog() == DialogResult.OK)
 2. **MisspellingPairs index ต้องตรงกับ checkedListBox1.Items** — ถ้าเพิ่ม/ลบคู่ต้องอัปเดตทั้งสองที่
 3. **SynonymGroups index ต้องตรงกับ checkedListBox1.Items ใน Synonym.Designer.cs** — ถ้าเพิ่ม/ลบกลุ่มต้องอัปเดตทั้งสองที่
 4. **HomoglyphPairs index ต้องตรงกับ CheckBox ใน OptionStaganogryphy** — 0=ChkbxDochada, 1=ChkbxKhoKhai, 2=ChkbxChoChang
-5. **Salt สุ่มใหม่ทุกครั้ง** — ฝังใน ciphertext output แล้ว (AES logic อยู่ใน `CryptoHelper.cs`)
+5. **Salt คงที่** — สำหรับงานจริงควรสุ่ม salt และฝังใน ciphertext (AES logic อยู่ใน `CryptoHelper.cs`)
 6. **UTF-8 encoding** — ทุกอย่างใช้ UTF-8 ทั้ง plaintext, ciphertext string, และ bit conversion
 7. **Covertext อยู่ใน Encryption tab** — `InputCovertext` อยู่ใน TabEncrytion แต่ใช้ร่วมกันผ่าน `GetCovertext()`
 8. **Drag & Drop** — ผูกใน `SteganographyForm_Load` ด้วย lambda; ใช้ `LoadFileIntoTextBox()` helper
