@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thai Text Steganography — UI Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #e8e8e8; display: flex; justify-content: center; padding: 30px; }
+  .window { width: 826px; background: #f0f0f0; border: 1px solid #888; box-shadow: 4px 4px 12px rgba(0,0,0,.3); }
+  .title-bar { background: linear-gradient(to right, #0078d4, #005a9e); color: #fff; padding: 6px 12px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+  .title-bar .controls span { display: inline-block; width: 14px; height: 14px; border-radius: 2px; margin-left: 4px; cursor: pointer; text-align: center; line-height: 14px; font-size: 10px; background: #c0c0c0; border: 1px solid #888; }
+  .menubar { background: #f0f0f0; border-bottom: 1px solid #ccc; padding: 2px 8px; font-size: 13px; display: flex; gap: 2px; }
+  .menubar span { padding: 3px 10px; cursor: pointer; border-radius: 3px; }
+  .menubar span:hover { background: #d0e8ff; }
+  .tabs { display: flex; border-bottom: 2px solid #0078d4; margin: 8px 8px 0; }
+  .tab { padding: 8px 20px; cursor: pointer; font-size: 13px; border: 1px solid #ccc; border-bottom: none; background: #e0e0e0; margin-right: 2px; border-radius: 4px 4px 0 0; transition: .15s; user-select: none; }
+  .tab.active { background: #fff; border-color: #0078d4; font-weight: bold; color: #0078d4; }
+  .tab:hover:not(.active) { background: #d8d8d8; }
+  .tab-content { display: none; background: #fff; border: 1px solid #ccc; border-top: none; margin: 0 8px; padding: 20px; min-height: 580px; }
+  .tab-content.active { display: block; }
+  .status-bar { background: #f0f0f0; border-top: 1px solid #ccc; padding: 6px 12px; font-size: 12px; color: #333; margin-top: 4px; }
+  label.field { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; color: #222; }
+  label.field:first-child { margin-top: 0; }
+  textarea, input[type=text], input[type=password] { width: 100%; border: 1px solid #aaa; padding: 6px 8px; font-size: 13px; font-family: inherit; border-radius: 2px; resize: none; }
+  textarea:focus, input:focus { outline: none; border-color: #0078d4; box-shadow: 0 0 0 1px #0078d4; }
+  textarea.readonly { background: #f0f0f0; color: #444; cursor: default; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+  .row-right { display: flex; justify-content: flex-end; gap: 8px; margin: 8px 0; }
+  .section-title { font-size: 15px; font-weight: bold; color: #1a1a2e; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #0078d4; }
+  button { padding: 7px 16px; font-size: 13px; border: 1px solid #999; border-radius: 3px; cursor: pointer; font-family: inherit; font-weight: 500; transition: .1s; }
+  button:hover { filter: brightness(0.92); }
+  button:active { transform: scale(0.97); }
+  .btn-green { background: #c0ffc0; color: #006400; border-color: #4a4; font-weight: bold; }
+  .btn-cyan { background: #c0ffff; color: #006060; border-color: #4aa; }
+  .btn-yellow { background: #ffffc0; color: #8b4513; border-color: #aa4; }
+  .btn-red { background: #ffc8c8; color: #8b0000; border-color: #a44; }
+  .btn-purple { background: #ffc0ff; color: #600060; border-color: #a4a; }
+  .btn-default { background: #f0f0f0; color: #222; }
+  .algo-row { display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap; }
+  .algo-btn { padding: 9px 14px; font-size: 13px; border: 1px solid #888; background: #f5f5f5; border-radius: 4px; cursor: pointer; transition: .15s; }
+  .algo-btn:hover { background: #ddeeff; border-color: #0078d4; }
+  .algo-btn.selected { background: #0078d4; color: #fff; border-color: #005a9e; }
+  .file-row { display: flex; align-items: center; gap: 8px; }
+  .file-row input { flex: 1; max-width: 200px; background: #f0f0f0; }
+  .key-row { display: flex; align-items: center; gap: 8px; }
+  .key-row input { flex: 1; max-width: 280px; }
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); z-index: 100; justify-content: center; align-items: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #f0f0f0; border: 1px solid #888; width: 700px; box-shadow: 6px 6px 20px rgba(0,0,0,.4); border-radius: 4px; }
+  .modal .modal-title { background: linear-gradient(to right, #0078d4, #005a9e); color: #fff; padding: 8px 14px; font-size: 13px; }
+  .modal .modal-body { padding: 20px; }
+  .modal .modal-footer { padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #ccc; }
+  .checkbox-list { border: 1px solid #aaa; background: #fff; max-height: 260px; overflow-y: auto; padding: 6px; font-size: 13px; }
+  .checkbox-list label { display: block; padding: 4px 6px; cursor: pointer; border-radius: 2px; }
+  .checkbox-list label:hover { background: #e8f0fe; }
+  .checkbox-list input[type=checkbox] { margin-right: 8px; }
+  .chk-row { display: flex; flex-direction: column; gap: 12px; margin: 16px 0; }
+  .chk-row label { font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  .chk-row input[type=checkbox] { width: 18px; height: 18px; }
+  .info-box { background: #eef6ff; border: 1px solid #b0d0f0; border-radius: 4px; padding: 14px; margin: 12px 0; font-size: 13px; color: #003366; line-height: 1.7; }
+  .capacity-text { font-size: 12px; color: #666; margin-top: 4px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+  .badge-ok { background: #d4edda; color: #155724; }
+  .badge-warn { background: #fff3cd; color: #856404; }
+  .journey-section { margin-top: 30px; padding: 20px; background: #fafafa; border: 1px dashed #ccc; border-radius: 8px; }
+  .journey-section h3 { font-size: 14px; color: #0078d4; margin-bottom: 10px; }
+  .journey-section ol { padding-left: 20px; font-size: 13px; line-height: 2; }
+  .journey-section ol li::marker { color: #0078d4; font-weight: bold; }
+  .e2e { margin-top: 20px; background: #1a1a2e; color: #e8e8e8; border-radius: 8px; padding: 24px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.8; }
+  .e2e .sender { color: #6dd5ed; }
+  .e2e .receiver { color: #f7971e; }
+  .e2e .arrow { color: #888; }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .legend-swatch { width: 28px; height: 18px; border-radius: 3px; border: 1px solid #999; }
+  h1.page-title { text-align: center; font-size: 22px; color: #1a1a2e; margin-bottom: 6px; }
+  p.page-sub { text-align: center; font-size: 13px; color: #666; margin-bottom: 24px; }
+  .divider { border: none; border-top: 2px dashed #ddd; margin: 30px 0; }
+  .subform-title { font-size: 16px; font-weight: bold; color: #1a1a2e; margin: 24px 0 12px; padding: 8px 0; border-bottom: 2px solid #0078d4; }
+</style>
+</head>
+<body>
+<div style="max-width:900px; width:100%;">
+
+<h1 class="page-title">Thai Text Steganography — UI Mockup</h1>
+<p class="page-sub">Static HTML recreation from Designer.cs source code analysis &bull; 826 x 782 px WinForms</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#c0ffc0"></div> Action หลัก</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#c0ffff"></div> Copy</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#ffffc0"></div> Reset</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#ffc8c8"></div> Decrypt / Cancel</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#ffc0ff"></div> Paste</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f5f5f5;"></div> Algorithm</div>
+</div>
+
+<!-- ==================== MAIN WINDOW ==================== -->
+<div class="window">
+  <div class="title-bar">
+    <span>Steganography</span>
+    <div class="controls"><span>—</span><span>☐</span><span>✕</span></div>
+  </div>
+  <div class="menubar">
+    <span>File</span>
+    <span>Help</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">Encryption</div>
+    <div class="tab" onclick="switchTab(1)">Steganography</div>
+    <div class="tab" onclick="switchTab(2)">Decryption</div>
+  </div>
+
+  <!-- TAB 1: ENCRYPTION -->
+  <div class="tab-content active" id="tab0">
+    <div class="section-title">Encryption AES-256</div>
+
+    <label class="field">Plaintext</label>
+    <textarea rows="4" placeholder="ใส่ข้อความลับที่ต้องการซ่อน (หรือ Drag & Drop ไฟล์ .txt)">สวัสดีครับ นี่คือข้อความลับที่ต้องการซ่อน</textarea>
+
+    <div class="file-row" style="margin:8px 0">
+      <span style="font-size:13px">File name</span>
+      <input type="text" value="" disabled placeholder="(ไม่มีไฟล์)" style="background:#f0f0f0">
+      <button class="btn-default">Browser</button>
+      <button class="btn-yellow">Reset</button>
+    </div>
+
+    <label class="field">Key</label>
+    <div class="key-row">
+      <input type="password" value="mysecretpassword" style="max-width:280px" placeholder="รหัสผ่านสำหรับเข้ารหัส AES-256">
+      <button class="btn-cyan">Copy</button>
+      <button class="btn-yellow">Reset</button>
+      <button class="btn-green">Encryption</button>
+    </div>
+
+    <label class="field">Ciphertext</label>
+    <textarea rows="4" class="readonly" readonly>dGhpcyBpcyBhIGJhc2U2NCBjaXBoZXJ0ZXh0IGV4YW1wbGUgZm9yIG1vY2t1cA==...</textarea>
+
+    <label class="field">Covertext</label>
+    <textarea rows="4" placeholder="ใส่ข้อความปกปิด เช่น ข่าว, รายงานการประชุม, บทความ">ประธานกล่าวว่าที่ประชุมมีมติอนุมัติงบประมาณรายจ่ายประจำปี คณะรัฐมนตรีได้ตรวจสอบและพิจารณาเห็นชอบตามที่สำนักงบประมาณเสนอ</textarea>
+
+    <div class="row-right">
+      <button class="btn-cyan">Copy Ciphertext</button>
+      <button class="btn-yellow">Reset</button>
+    </div>
+
+    <div class="journey-section">
+      <h3>User Journey — แท็บ Encryption</h3>
+      <ol>
+        <li>ใส่ข้อความลับใน <b>Plaintext</b> (หรือ Drag &amp; Drop ไฟล์ / กด Browser)</li>
+        <li>ใส่ Password ในช่อง <b>Key</b> (แสดงเป็น ●●● อัตโนมัติ)</li>
+        <li>ใส่ข้อความปกปิด (ข่าว, รายงาน ฯลฯ) ในช่อง <b>Covertext</b></li>
+        <li>กดปุ่ม <b style="color:#006400">Encryption</b> → Ciphertext (Base64) ปรากฏ + sync ไปแท็บ 2 อัตโนมัติ</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- TAB 2: STEGANOGRAPHY -->
+  <div class="tab-content" id="tab1">
+    <div class="section-title">Steganography</div>
+
+    <label class="field">Ciphertext</label>
+    <textarea rows="4" style="background:#f8f8f8">dGhpcyBpcyBhIGJhc2U2NCBjaXBoZXJ0ZXh0IGV4YW1wbGUgZm9yIG1vY2t1cA==...</textarea>
+    <div class="row-right"><button class="btn-yellow">Reset</button></div>
+
+    <label class="field">Algorithm</label>
+    <div class="algo-row">
+      <button class="algo-btn" onclick="openModal('homoglyph')">Homoglyph</button>
+      <button class="algo-btn" onclick="openModal('misspelling')">Misspelling</button>
+      <button class="algo-btn" onclick="openModal('zwsp')">Space</button>
+      <button class="algo-btn" onclick="openModal('nbsp')">NBSP</button>
+      <button class="algo-btn" onclick="openModal('synonym')">Synonym</button>
+    </div>
+
+    <label class="field">Steganotext</label>
+    <textarea rows="5" class="readonly" readonly>ประธานพูดว่าที่ประชุมหารือมีมติเห็นชอบงบประมาน รายจ่ายประจำปี คณะรัฐมลตรีได้พิจารณาและตรวจสอบเห็นพ้องตามที่สำนักงบประมานยื่นข้อเสนอ</textarea>
+
+    <div class="row-right">
+      <button class="btn-cyan">Copy</button>
+      <button class="btn-default">Save</button>
+    </div>
+
+    <div class="journey-section">
+      <h3>User Journey — แท็บ Steganography</h3>
+      <ol>
+        <li>Ciphertext <b>sync มาอัตโนมัติ</b>จากแท็บ 1 (ไม่ต้องทำอะไร)</li>
+        <li>Status Bar แสดง bits ที่ต้องการ + ความจุ ZWSP/NBSP</li>
+        <li>กดปุ่ม<b>เทคนิค</b>ที่ต้องการ → <b>sub-form</b> เปิดขึ้นเพื่อเลือก options</li>
+        <li>เลือก options → กด <b style="color:#006400">ตกลง</b></li>
+        <li><b>Steganotext</b> ปรากฏ → กด <b>Copy</b> หรือ <b>Save</b></li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- TAB 3: DECRYPTION -->
+  <div class="tab-content" id="tab2">
+    <div class="section-title">Decryption</div>
+
+    <label class="field">Steganotext</label>
+    <textarea rows="5" placeholder="วาง Steganotext ที่ได้รับ (หรือ Drag & Drop ไฟล์ .txt)">ประธานพูดว่าที่ประชุมหารือมีมติเห็นชอบงบประมาน รายจ่ายประจำปี คณะรัฐมลตรีได้พิจารณาและตรวจสอบเห็นพ้องตามที่สำนักงบประมานยื่นข้อเสนอ</textarea>
+    <div class="row-right"><button class="btn-yellow">Reset</button></div>
+
+    <label class="field">Key</label>
+    <div class="key-row">
+      <input type="password" value="mysecretpassword" style="max-width:280px" placeholder="รหัสผ่านเดิม">
+      <button class="btn-purple">Paste</button>
+      <button class="btn-yellow">Reset</button>
+    </div>
+
+    <label class="field">Algorithm</label>
+    <div class="algo-row">
+      <button class="algo-btn">Homoglyph</button>
+      <button class="algo-btn">Misspelling</button>
+      <button class="algo-btn">Space</button>
+      <button class="algo-btn">NBSP</button>
+      <button class="algo-btn">Synonym</button>
+    </div>
+    <div class="row-right" style="margin-top:4px">
+      <button class="btn-red" style="font-weight:bold">Decryption</button>
+    </div>
+
+    <label class="field">Plaintext</label>
+    <textarea rows="5" class="readonly" readonly>สวัสดีครับ นี่คือข้อความลับที่ต้องการซ่อน</textarea>
+
+    <div class="row-right">
+      <button class="btn-cyan">Copy</button>
+      <button class="btn-yellow">Reset</button>
+    </div>
+    <div class="row-right">
+      <button class="btn-green" style="padding:9px 28px">Save Plaintext</button>
+    </div>
+
+    <div class="journey-section">
+      <h3>User Journey — แท็บ Decryption</h3>
+      <ol>
+        <li>วาง <b>Steganotext</b> (หรือ Drag &amp; Drop ไฟล์)</li>
+        <li>ใส่ <b>Password เดิม</b> (หรือกด Paste)</li>
+        <li>กดปุ่ม<b>เทคนิคเดียวกัน</b>กับที่ใช้ตอนซ่อน → เลือก options เดิม → ตกลง</li>
+        <li>ข้อความลับปรากฏใน <b>Plaintext</b></li>
+        <li>กด <b>Copy</b> / <b style="color:#006400">Save Plaintext</b></li>
+      </ol>
+      <p style="font-size:12px; color:#888; margin-top:8px">* ปุ่ม <b style="color:#8b0000">Decryption</b> (แดง) = ถอด AES โดยตรงจาก Base64 (ไม่ผ่าน extract)</p>
+    </div>
+  </div>
+
+  <div class="status-bar" id="statusBar">ต้องการ 736 bits &nbsp;|&nbsp; ZWSP: 799 &nbsp; NBSP: 45 &nbsp; <span class="badge badge-ok">✓ พอ</span></div>
+</div>
+
+<!-- ==================== SUB-FORMS (Modals) ==================== -->
+
+<div class="subform-title">Sub-forms (หน้าต่างย่อย — เปิดเมื่อกดปุ่ม Algorithm)</div>
+
+<!-- HOMOGLYPH -->
+<div class="window" style="width:700px; margin-top:16px" id="modal-homoglyph">
+  <div class="title-bar"><span>Homoglyph — เลือกคู่ตัวอักษรสำหรับฝัง</span><div class="controls"><span>✕</span></div></div>
+  <div style="padding:20px">
+    <div style="font-size:15px; font-weight:bold; margin-bottom:4px">เลือกคู่ตัวอักษร Homoglyph</div>
+    <div style="font-size:12px; color:#888; margin-bottom:16px">ตัวอักษรซ้ายคือตัวจริง (bit=0), ขวาคือตัวแทน (bit=1)</div>
+    <div class="chk-row">
+      <label><input type="checkbox" checked> ฎ &nbsp;→&nbsp; ฏ &nbsp;&nbsp;(ดอชะดา / ปะตัก)</label>
+      <label><input type="checkbox" checked> ข &nbsp;→&nbsp; ฃ &nbsp;&nbsp;(ขอไข่ / ขอขวด)</label>
+      <label><input type="checkbox"> ช &nbsp;→&nbsp; ซ &nbsp;&nbsp;(ชอช้าง / โซ่โซ)</label>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:24px; padding-top:14px; border-top:1px solid #ddd">
+      <button class="btn-green" style="min-width:100px">ตกลง</button>
+      <button class="btn-red" style="min-width:100px">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- MISSPELLING -->
+<div class="window" style="width:700px; margin-top:16px" id="modal-misspelling">
+  <div class="title-bar"><span>Misspelling — เลือกคู่คำสำหรับฝัง</span><div class="controls"><span>✕</span></div></div>
+  <div style="padding:20px">
+    <div style="font-size:14px; font-weight:600; margin-bottom:10px">คำที่สะกดถูก : คำที่สะกดผิด</div>
+    <div class="checkbox-list">
+      <label><input type="checkbox" checked> กบฏ : กบฎ / กบถ</label>
+      <label><input type="checkbox" checked> กฎหมาย : กฏหมาย</label>
+      <label><input type="checkbox" checked> คณะรัฐมนตรี : คณะรัฐมลตรี</label>
+      <label><input type="checkbox" checked> คำนวณ : คำนวน</label>
+      <label><input type="checkbox" checked> ข้อตกลง : ข้อตกลง์</label>
+      <label><input type="checkbox"> ข้าราชการ : ข้าราชการ์</label>
+      <label><input type="checkbox"> งบการเงิน : งบการเงิน์</label>
+      <label><input type="checkbox" checked> งบประมาณ : งบประมาน</label>
+      <label><input type="checkbox"> จดทะเบียน : จดทะเบียณ</label>
+      <label><input type="checkbox"> จรรยาบรรณ : จรรยาบรรณ์</label>
+      <label><input type="checkbox"> ฉบับ : ฉบับ์</label>
+      <label><input type="checkbox"> ฉันทามติ : ฉันทามต</label>
+      <label><input type="checkbox" checked> ชอบด้วยกฎหมาย : ชอบด้วยกฏหมาย</label>
+      <label><input type="checkbox"> ... (65 คู่ — เลื่อนดูได้)</label>
+      <label><input type="checkbox"> เบรก : เบรค</label>
+      <label><input type="checkbox"> ทยอย : ทะยอย</label>
+      <label><input type="checkbox"> ผูกพัน : ผูกพันธ์</label>
+    </div>
+    <div style="font-size:12px; color:#888; margin-top:8px">คำถูก = bit 0 &nbsp;|&nbsp; คำผิด = bit 1 &nbsp;(เลือกคู่ที่ปรากฏใน covertext)</div>
+    <div style="display:flex; justify-content:space-between; margin-top:14px; padding-top:14px; border-top:1px solid #ddd">
+      <div style="display:flex; gap:8px">
+        <button class="btn-default">เลือกทั้งหมด</button>
+        <button class="btn-default">ยกเลิกทั้งหมด</button>
+      </div>
+      <div style="display:flex; gap:8px">
+        <button class="btn-green" style="min-width:90px">ตกลง</button>
+        <button class="btn-red" style="min-width:90px">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ZWSP -->
+<div class="window" style="width:700px; margin-top:16px" id="modal-zwsp">
+  <div class="title-bar"><span>Zero-Width Space — ฝังข้อมูล</span><div class="controls"><span>✕</span></div></div>
+  <div style="padding:20px">
+    <div style="font-size:16px; font-weight:bold; margin-bottom:14px">Zero-Width Space (ZWSP)</div>
+    <div style="font-size:13px; line-height:1.8; margin-bottom:12px">
+      เทคนิคนี้แทรก U+200B ระหว่างตัวอักษร<br>
+      bit 1 = แทรก ZWSP, bit 0 = ไม่แทรก<br><br>
+      Covertext ที่ป้อน: <b>142 ตัวอักษร</b> (141 slots) — รองรับได้สูงสุด <b>141 bits</b>
+    </div>
+    <div class="info-box">
+      <b>หลักการทำงาน:</b><br>
+      • ฝัง: วนผ่านทุกช่องระหว่างตัวอักษร<br>
+      &nbsp;&nbsp;- bit=1 → แทรก ZWSP (U+200B)<br>
+      &nbsp;&nbsp;- bit=0 → ไม่แทรกอะไร<br>
+      • ถอด: ตรวจช่องว่างระหว่างตัวอักษร<br>
+      &nbsp;&nbsp;- มี ZWSP → bit=1, ไม่มี → bit=0
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:14px; border-top:1px solid #ddd">
+      <button class="btn-green" style="min-width:100px">ตกลง</button>
+      <button class="btn-red" style="min-width:100px">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- NBSP -->
+<div class="window" style="width:700px; margin-top:16px" id="modal-nbsp">
+  <div class="title-bar"><span>Non-Breaking Space — ฝังข้อมูล</span><div class="controls"><span>✕</span></div></div>
+  <div style="padding:20px">
+    <div style="font-size:16px; font-weight:bold; margin-bottom:14px">Non-Breaking Space (NBSP)</div>
+    <div style="font-size:13px; line-height:1.8; margin-bottom:12px">
+      เทคนิคนี้แทนที่ช่องว่างปกติ (U+0020) ด้วย Non-Breaking Space (U+00A0)<br>
+      bit 1 = NBSP, bit 0 = space ปกติ<br><br>
+      Covertext ที่ป้อน: <b>142 ตัวอักษร</b> (<b>18</b> spaces) — รองรับได้สูงสุด <b>18 bits</b>
+    </div>
+    <div class="info-box">
+      <b>หลักการทำงาน:</b><br>
+      • ฝัง: วนผ่านทุก space (U+0020) ใน covertext<br>
+      &nbsp;&nbsp;- bit=1 → แทนที่ด้วย NBSP (U+00A0)<br>
+      &nbsp;&nbsp;- bit=0 → คง space ปกติไว้<br>
+      • ถอด: ตรวจสอบแต่ละตำแหน่ง space/NBSP<br>
+      &nbsp;&nbsp;- NBSP → bit=1, space ปกติ → bit=0
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:14px; border-top:1px solid #ddd">
+      <button class="btn-green" style="min-width:100px">ตกลง</button>
+      <button class="btn-red" style="min-width:100px">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- SYNONYM -->
+<div class="window" style="width:700px; margin-top:16px" id="modal-synonym">
+  <div class="title-bar"><span>Synonym — คำพ้องความหมาย — เลือกกลุ่มสำหรับฝัง</span><div class="controls"><span>✕</span></div></div>
+  <div style="padding:20px">
+    <div style="font-size:14px; font-weight:600; margin-bottom:10px">คำพ้องความหมาย (bit 0 / bit 1)</div>
+    <div class="checkbox-list">
+      <label><input type="checkbox" checked> กล่าว / พูด</label>
+      <label><input type="checkbox" checked> ได้รับ / ได้มา</label>
+      <label><input type="checkbox" checked> ทำ / กระทำ</label>
+      <label><input type="checkbox" checked> ใช้ / นำมาใช้</label>
+      <label><input type="checkbox"> มอง / เฝ้ามอง</label>
+      <label><input type="checkbox"> เดิน / ย่าง</label>
+      <label><input type="checkbox" checked> คิด / ไตร่ตรอง</label>
+      <label><input type="checkbox"> หยุด / หยุดชะงัก</label>
+      <label><input type="checkbox" checked> ต้องการ / ประสงค์</label>
+      <label><input type="checkbox"> เริ่ม / เริ่มต้น</label>
+      <label><input type="checkbox"> ... (64 กลุ่ม — เลื่อนดูได้)</label>
+      <label><input type="checkbox"> สำคัญ / มีความสำคัญ</label>
+      <label><input type="checkbox"> จำเป็น / มีความจำเป็น</label>
+    </div>
+    <div style="font-size:12px; color:#888; margin-top:8px">คำซ้าย = bit 0 &nbsp;|&nbsp; คำขวา = bit 1 &nbsp;(เลือกกลุ่มที่ปรากฏใน covertext)</div>
+    <div style="display:flex; justify-content:space-between; margin-top:14px; padding-top:14px; border-top:1px solid #ddd">
+      <div style="display:flex; gap:8px">
+        <button class="btn-default">เลือกทั้งหมด</button>
+        <button class="btn-default">ยกเลิกทั้งหมด</button>
+      </div>
+      <div style="display:flex; gap:8px">
+        <button class="btn-green" style="min-width:90px">ตกลง</button>
+        <button class="btn-red" style="min-width:90px">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== END-TO-END JOURNEY ==================== -->
+<hr class="divider">
+
+<div class="e2e">
+  <div style="text-align:center; font-size:16px; font-weight:bold; margin-bottom:16px; color:#fff">Full User Journey (End-to-End)</div>
+  <div style="display:flex; justify-content:space-between;">
+    <div>
+      <div class="sender" style="font-weight:bold; margin-bottom:8px">ผู้ส่ง (Encode):</div>
+      <div>① ใส่ข้อความลับ</div>
+      <div>② ใส่ Password</div>
+      <div>③ ใส่ Covertext</div>
+      <div>④ กด Encrypt → เลือกเทคนิค</div>
+      <div>&nbsp;&nbsp;&nbsp;→ ได้ <b>Steganotext</b></div>
+      <div>&nbsp;&nbsp;&nbsp;→ ส่งให้ผู้รับ</div>
+      <div style="margin-top:10px; color:#666">[แท็บ 1 → แท็บ 2]</div>
+    </div>
+    <div style="display:flex; align-items:center; font-size:28px; color:#888">→</div>
+    <div>
+      <div class="receiver" style="font-weight:bold; margin-bottom:8px">ผู้รับ (Decode):</div>
+      <div>⑤ วาง Steganotext</div>
+      <div>⑥ ใส่ Password เดิม</div>
+      <div>⑦ เลือกเทคนิค+options เดิม</div>
+      <div>⑧ ได้<b>ข้อความลับ</b>กลับคืน</div>
+      <div>&nbsp;</div>
+      <div>&nbsp;</div>
+      <div style="margin-top:10px; color:#666">[แท็บ 3]</div>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:18px; font-size:12px; color:#aaa">
+    สิ่งที่ผู้รับต้องรู้: <b>Password</b> + <b>เทคนิคที่ใช้</b> + <b>options ที่เลือก</b> (คู่อักษร/คำ)
+  </div>
+</div>
+
+<div style="text-align:center; margin-top:20px; font-size:11px; color:#aaa">
+  Generated from source code analysis &bull; SteganographyForm.Designer.cs + 5 sub-form Designer files &bull; .NET Framework 4.8 WinForms
+</div>
+
+</div>
+
+<script>
+function switchTab(idx) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('.tab-content').forEach((c, i) => c.classList.toggle('active', i === idx));
+  const msgs = [
+    'พร้อมใช้งาน',
+    'ต้องการ 736 bits \u00a0|\u00a0 ZWSP: 799 \u00a0 NBSP: 45 \u00a0 <span class="badge badge-ok">\u2713 พอ</span>',
+    'พร้อมถอดรหัส'
+  ];
+  document.getElementById('statusBar').innerHTML = msgs[idx];
+}
+</script>
+</body>
+</html>
