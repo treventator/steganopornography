@@ -21,7 +21,7 @@ Steganotext: "ประธานกล่าวว่าที่ประชุ
 
 ## ความสามารถ
 
-- **เข้ารหัส AES-256-CBC** พร้อม PBKDF2 (10,000 รอบ), salt สุ่มใหม่ทุกครั้ง, และ HMAC-SHA256 ป้องกันการดัดแปลง
+- **เข้ารหัส AES-256-CBC** พร้อม PBKDF2 (10,000 รอบ), Salt คงที่ (เพื่อการศึกษา)
 - **5 เทคนิค Steganography** ออกแบบสำหรับภาษาไทยโดยเฉพาะ:
 
 | เทคนิค | วิธีการ | ตาเปล่าสังเกตได้? | ความจุ |
@@ -34,8 +34,7 @@ Steganotext: "ประธานกล่าวว่าที่ประชุ
 
 - **ลากวางไฟล์** (Drag & Drop) ได้ทั้ง Plaintext และ Steganotext
 - **Sync อัตโนมัติ** ระหว่างแท็บ Encryption กับ Steganography
-- **แสดงความจุ** (Bit Capacity) ใน Status Bar แบบ real-time
-- **CRC-16** ตรวจสอบความถูกต้อง — จับได้ทันทีถ้าเลือกเทคนิค/คู่คำผิด
+- **แสดงความจุ** (Bit Capacity) ใน Status Bar แบบ real-time (ทั้ง ZWSP และ NBSP)
 
 ## วิธีทำงาน
 
@@ -55,8 +54,6 @@ Steganotext: "ประธานกล่าวว่าที่ประชุ
 ```
 [แท็บ 3: Decryption]
   Steganotext + รหัสผ่าน + เทคนิคเดิม  -->  ดึง bits ออกมา
-                                        -->  ตรวจ CRC-16
-                                        -->  ตรวจ HMAC-SHA256
                                         -->  AES ถอดรหัส
                                         -->  ข้อความลับ
 ```
@@ -64,13 +61,14 @@ Steganotext: "ประธานกล่าวว่าที่ประชุ
 ### รูปแบบ Payload
 
 ```
-[32-bit ความยาว (big-endian)] [16-bit CRC-16] [data bits (UTF-8, MSB first)]
+[32-bit ความยาว (big-endian)] [data bits (UTF-8, MSB first)]
 ```
 
-### รูปแบบ AES Output
+### รูปแบบ AES
 
 ```
-Base64( salt_สุ่ม[16] + aes_ciphertext[N] + hmac_sha256[32] )
+PBKDF2(password, salt_คงที่, 10000) --> Key[32] + IV[16]
+AES-256-CBC(plaintext, Key, IV) --> Base64(ciphertext)
 ```
 
 ## ตัวอย่างการใช้งาน
@@ -80,10 +78,10 @@ Base64( salt_สุ่ม[16] + aes_ciphertext[N] + hmac_sha256[32] )
 ```
 1. Plaintext = "Hi", Password = "secret"
 2. AES Encrypt --> Base64 ciphertext 88 ตัวอักษร
-3. Payload = 32 + 16 + 704 = 752 bits
+3. Payload = 32 + 704 = 736 bits
 4. Covertext = บทความข่าวภาษาไทย 800+ ตัวอักษร
 5. ZWSP Embed --> แทรกอักขระล่องหนระหว่างตัวอักษร
-6. ผลลัพธ์: ข้อความเหมือนเดิม 100% แต่ซ่อน 752 bits ไว้
+6. ผลลัพธ์: ข้อความเหมือนเดิม 100% แต่ซ่อน 736 bits ไว้
 ```
 
 ### ซ่อน "เจอกัน 3 ทุ่ม" ด้วย Synonym
@@ -91,7 +89,7 @@ Base64( salt_สุ่ม[16] + aes_ciphertext[N] + hmac_sha256[32] )
 ```
 1. Plaintext = "เจอกัน 3 ทุ่ม", Password = "mypass"
 2. AES Encrypt --> Base64 ciphertext 128 ตัวอักษร
-3. Payload = 32 + 16 + 1024 = 1,072 bits
+3. Payload = 32 + 1024 = 1,056 bits
 4. Covertext = รายงานการประชุมสภา (มีคำพ้องเยอะ)
 5. Synonym Embed --> "กล่าว"→"พูด", "อนุมัติ"→"เห็นชอบ"
 6. ผลลัพธ์: ข้อความอ่านได้ความหมายเหมือนเดิม แต่ซ่อนข้อมูลลับไว้
@@ -104,17 +102,13 @@ Steganography/
   Program.cs                        # จุดเริ่มต้นโปรแกรม
   SteganographyForm.cs              # หน้าหลัก (3 แท็บ: เข้ารหัส / ซ่อน / ถอดรหัส)
   SteganographyForm.Designer.cs     # UI layout
-  CryptoHelper.cs                   # AES-256-CBC + PBKDF2 + HMAC-SHA256
+  CryptoHelper.cs                   # AES-256-CBC + PBKDF2
   SteganographyEngine.cs            # แกนหลัก: Embed/Extract ทั้ง 5 เทคนิค
   OptionStaganogryphy.cs/.Designer  # ฟอร์มย่อย: Homoglyph (3 คู่ตัวอักษร)
-  Misspelling.cs/.Designer          # ฟอร์มย่อย: Misspelling (64 คู่คำ)
+  Misspelling.cs/.Designer          # ฟอร์มย่อย: Misspelling (65 คู่คำ)
   Space.cs/.Designer                # ฟอร์มย่อย: ZWSP (ไม่ต้องเลือก options)
   Nbsp.cs/.Designer                 # ฟอร์มย่อย: NBSP (ไม่ต้องเลือก options)
   Synonym.cs/.Designer              # ฟอร์มย่อย: Synonym (64 กลุ่มคำพ้อง)
-
-docs/
-  benefits-and-testcases.md         # ประโยชน์, ตัวอย่าง IPO, Test Cases 35+ รายการ
-  slide.md                          # Brief สำหรับทำ Slide นำเสนอ
 ```
 
 ## ความต้องการของระบบ
@@ -136,15 +130,16 @@ docs/
 
 โปรเจคนี้จัดทำ **เพื่อการศึกษาเท่านั้น**
 
-| คุณสมบัติ | สถานะ |
+| คุณสมบัติ | รายละเอียด |
 |---|---|
-| Salt สุ่มใหม่ทุกครั้ง | 16 bytes |
-| HMAC-SHA256 (Encrypt-then-MAC) | ตรวจก่อน decrypt, constant-time comparison |
-| CRC-16 ตรวจ payload | จับเทคนิค/คู่คำผิดได้ทันที |
+| AES-256-CBC | เข้ารหัส/ถอดรหัสข้อมูล |
 | PBKDF2 key derivation | 10,000 รอบ |
+| Salt | 16 bytes คงที่ ("Stegano2025Educa") |
 
 **ข้อจำกัดสำหรับงานจริง:**
+- Salt ควรสุ่มใหม่ทุกครั้งและฝังใน ciphertext
 - PBKDF2 ควรใช้ 100,000+ รอบสำหรับ hardware สมัยใหม่
+- ควรเพิ่ม HMAC เพื่อป้องกันการดัดแปลง ciphertext
 - Homoglyph/Misspelling ตรวจจับได้ด้วยโปรแกรมวิเคราะห์ข้อความ
 - ZWSP ตรวจจับได้ด้วยการสแกนหา U+200B
 - NBSP ตรวจจับได้ด้วยการสแกนหา U+00A0
