@@ -109,6 +109,10 @@ Steganography/
   Space.cs/.Designer                # ฟอร์มย่อย: ZWSP (ไม่ต้องเลือก options)
   Nbsp.cs/.Designer                 # ฟอร์มย่อย: NBSP (ไม่ต้องเลือก options)
   Synonym.cs/.Designer              # ฟอร์มย่อย: Synonym (64 กลุ่มคำพ้อง)
+
+diagram.md                          # Mermaid diagrams — หลักการทำงานทุกเทคนิค
+mockup.html                         # Static HTML mockup ของ UI + User Journey
+slide.md                            # คำสั่งสำหรับ AI Agent สร้าง Infographic Slides
 ```
 
 ## ความต้องการของระบบ
@@ -144,6 +148,12 @@ Steganography/
 - ZWSP ตรวจจับได้ด้วยการสแกนหา U+200B
 - NBSP ตรวจจับได้ด้วยการสแกนหา U+00A0
 - ไม่มี forward secrecy หรือระบบหมุนเวียน key
+
+## เอกสารเพิ่มเติม
+
+- **[diagram.md](diagram.md)** — Mermaid diagrams: Overall Flow, Payload Format, ทุกเทคนิค, Class Diagram, Greedy Algorithm
+- **[mockup.html](mockup.html)** — Static HTML mockup แสดง UI ทั้ง 3 แท็บ + 5 sub-forms + User Journey
+- **[slide.md](slide.md)** — คำสั่งสร้าง Infographic Slides สำหรับนำเสนออาจารย์
 
 ## สิทธิ์การใช้งาน
 
